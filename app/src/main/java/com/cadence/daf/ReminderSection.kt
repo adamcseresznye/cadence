@@ -76,6 +76,7 @@ fun ReminderSection(settings: Settings, viewModel: MainViewModel) {
                 .defaultMinSize(minHeight = 48.dp)
                 .clickable(role = Role.Button) { picking = true }
         )
+        Caption(R.string.reminder_battery_hint)
     }
     if (picking) {
         ReminderTimeDialog(

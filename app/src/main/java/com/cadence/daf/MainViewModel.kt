@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
@@ -59,6 +60,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.applyFadeProgram() }
         viewModelScope.launch {
             repository.settings.map { it.reminderEnabled to it.reminderMinute }.distinctUntilChanged()
+                // Skip the initial value: re-arming on app start would cancel a pending alarm that is late but not yet fired.
+                .drop(1)
                 .collect { (enabled, minute) -> Reminders.schedule(application, enabled, minute) }
         }
         viewModelScope.launch {

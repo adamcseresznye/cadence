@@ -89,6 +89,7 @@
     <string name="fade_caption">Lowers the delay a little every week, down to 40 ms. The delay slider is locked while this is on.</string>
     <string name="reminder_switch">Daily reminder</string>
     <string name="reminder_caption">One notification a day. Skipped when you have already practised.</string>
+    <string name="reminder_battery_hint">Not arriving? Set Cadence to Unrestricted under Settings, Apps, Cadence, Battery. It can still be up to 10 minutes late.</string>
     <string name="reminder_time">Time: %1$s</string>
     <string name="reminder_channel">Practice reminders</string>
     <string name="reminder_title">Time to practise</string>
