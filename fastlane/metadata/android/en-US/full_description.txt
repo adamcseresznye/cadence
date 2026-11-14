@@ -1,0 +1,22 @@
+Cadence plays your own voice back to you through wired earbuds, delayed by 40 to 200 milliseconds. This is delayed auditory feedback (DAF), a common speech practice technique.
+
+<b>Features</b>
+<ul>
+<li><b>Delay:</b> 40 to 200 ms in 10 ms steps. While you practise, the screen shows the actual delay: your setting plus the delay your phone and earbuds add.</li>
+<li><b>Only your voice:</b> a gate plays back only when you speak, so traffic and other background noise are not played back. A sensitivity slider sets how easily it opens.</li>
+<li><b>Automatic voice boost:</b> quiet speech from a weak headset microphone is raised to a clear level. Background noise does not raise the boost.</li>
+<li><b>Pitch shift and volume:</b> shift your voice from -12 to +12 semitones and set the loudness in your earbuds.</li>
+<li><b>Fading program:</b> lowers the delay a little every week, down to 40 ms.</li>
+<li><b>Runs in the background:</b> the notification has Stop, Mute and delay buttons, so it works with the screen off.</li>
+<li><b>Stops when it should:</b> when you unplug the earbuds, when a call comes in, when another app starts playing, or when you swipe the app away.</li>
+<li><b>Progress:</b> a daily goal, a 30-day calendar, totals and an optional daily reminder.</li>
+</ul>
+
+<b>What you need</b>
+Android 8.0 or newer and wired earbuds with a microphone. Never use the phone speaker, because it feeds back into the microphone. Keep the volume low.
+
+<b>Privacy</b>
+The audio never leaves the phone and is never stored. No account, no ads, no analytics, no internet access. Only the date and length of each session are saved.
+
+<b>Medical disclaimer</b>
+Cadence is a practice tool, not a medical device. It does not diagnose or treat any condition. For speech therapy, talk to a qualified speech-language therapist.

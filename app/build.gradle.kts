@@ -50,6 +50,11 @@ android {
         compose = true
         prefab = true
     }
+    // F-Droid rejects the encrypted Google dependency block in the APK.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 dependencies {
