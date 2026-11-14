@@ -6,6 +6,13 @@
 
 Cadence is an Android app that plays your own voice back to you with a short delay, for speech practice.
 
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_main.png" width="200" alt="Main screen">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2_fine_tune.png" width="200" alt="Fine-tune controls">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3_settings.png" width="200" alt="Settings">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4_progress.png" width="200" alt="Progress">
+</p>
+
 ## What it does
 
 Cadence plays your own voice back to you through wired earbuds, delayed by 40 to 200 milliseconds. A gate mutes the playback when you are not speaking, so traffic and construction noise are not played back. Everything runs on the phone, and you need wired earbuds with a microphone.
