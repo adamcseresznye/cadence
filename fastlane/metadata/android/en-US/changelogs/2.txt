@@ -1,0 +1,1 @@
+Fixed the daily reminder being cancelled when you open the app. Added a hint about the battery setting.

@@ -13,8 +13,8 @@ android {
         applicationId = "com.cadence.daf"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
@@ -32,8 +32,22 @@ android {
         }
     }
 
+    // Release signing only when the key is configured in ~/.gradle/gradle.properties; builders without it (F-Droid) get an unsigned APK.
+    val releaseKey = providers.gradleProperty("CADENCE_STORE_FILE").orNull
+    signingConfigs {
+        if (releaseKey != null) {
+            create("release") {
+                storeFile = file(releaseKey)
+                storePassword = providers.gradleProperty("CADENCE_STORE_PASSWORD").get()
+                keyAlias = providers.gradleProperty("CADENCE_KEY_ALIAS").get()
+                keyPassword = providers.gradleProperty("CADENCE_KEY_PASSWORD").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseKey != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
