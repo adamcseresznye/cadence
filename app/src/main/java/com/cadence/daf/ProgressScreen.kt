@@ -1,6 +1,10 @@
 package com.cadence.daf
 
+import android.content.Intent
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +66,8 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val stats = state.practice
     val goal = state.settings.dailyGoalMin
     var confirmDelete by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     ScreenScaffold {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             IconButton(onClick = onBack) {
@@ -84,7 +90,16 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
         SectionCard {
             Text(stringResource(R.string.daily_goal), style = MaterialTheme.typography.titleMedium)
             Caption(R.string.goal_caption)
-            GoalChips(goal, viewModel::setDailyGoalMin)
+            MinuteChips(GOAL_CHOICES, goal, viewModel::setDailyGoalMin)
+            TextButton(onClick = {
+                scope.launch {
+                    // shortcut: shared as plain text, not a file; switch to FileProvider if the log outgrows ~500 kB.
+                    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, viewModel.practiceCsv())
+                    context.startActivity(Intent.createChooser(send, null))
+                }
+            }) {
+                Text(stringResource(R.string.export_history), color = MaterialTheme.colorScheme.primary)
+            }
             TextButton(onClick = { confirmDelete = true }) {
                 Text(stringResource(R.string.delete_history), color = MaterialTheme.colorScheme.primary)
             }
@@ -108,10 +123,10 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun GoalChips(goal: Int, onSelect: (Int) -> Unit) {
+internal fun MinuteChips(choices: List<Int>, goal: Int, onSelect: (Int) -> Unit) {
     val colors = MaterialTheme.colorScheme
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        GOAL_CHOICES.forEach { choice ->
+        choices.forEach { choice ->
             val selected = choice == goal
             FilterChip(
                 selected = selected,

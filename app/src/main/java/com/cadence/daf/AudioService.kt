@@ -85,7 +85,7 @@ class AudioService : Service() {
             outputId
         )
         if (code != 0) {
-            _lastError.value = "Start failed, code $code"
+            _lastError.value = getString(R.string.start_failed, code)
             shutDown()
             return
         }
@@ -103,6 +103,14 @@ class AudioService : Service() {
                 delayMs = settings.delayMs
                 fadeEnabled = settings.fadeEnabled
                 refreshNotification()
+            }
+        }
+        scope.launch {
+            // Auto-stop: the limit is read once, at Start.
+            val limitMin = repository.settings.first().sessionLimitMin
+            if (limitMin > 0) {
+                delay(limitMin * 60_000L)
+                shutDown()
             }
         }
         scope.launch {
@@ -174,6 +182,8 @@ class AudioService : Service() {
         audio.mode = AudioManager.MODE_NORMAL
     }
 
+    // Called from the main thread and from the state poll: synchronized so a session is logged once.
+    @Synchronized
     private fun shutDown() {
         scope.coroutineContext.cancelChildren()
         NativeEngine.nativeStop()

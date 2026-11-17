@@ -15,7 +15,13 @@ data class Settings(
     val dailyGoalMin: Int = 10,
     val reminderEnabled: Boolean = false,
     val reminderMinute: Int = 18 * 60,
+    val sessionLimitMin: Int = 0,
+    val presets: List<Preset?> = List(PRESET_SLOTS) { null },
 )
+
+val SESSION_LIMIT_CHOICES = listOf(0, 5, 10, 15, 20, 30)
+
+fun clampSessionLimitMin(min: Int): Int = if (min in SESSION_LIMIT_CHOICES) min else 0
 
 fun clampDelayMs(ms: Int): Int = ms.coerceIn(40, 200)
 

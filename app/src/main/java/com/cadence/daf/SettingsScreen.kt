@@ -50,6 +50,11 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
         SectionCard { MicSection(state) { viewModel.setMicPreset(it) } }
         SectionCard { GateRow(state.settings.gateEnabled, viewModel::setGateEnabled) }
         SectionCard { FadeSection(state.settings, viewModel) }
+        SectionCard {
+            Text(stringResource(R.string.session_limit), style = MaterialTheme.typography.titleMedium)
+            Caption(R.string.session_limit_caption)
+            MinuteChips(SESSION_LIMIT_CHOICES, state.settings.sessionLimitMin, viewModel::setSessionLimitMin)
+        }
         SectionCard { ReminderSection(state.settings, viewModel) }
         SectionCard {
             Text(stringResource(R.string.about), style = MaterialTheme.typography.titleMedium)

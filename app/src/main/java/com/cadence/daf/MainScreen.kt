@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.view.HapticFeedbackConstants
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -115,7 +116,7 @@ fun MainScreen(viewModel: MainViewModel, openSettings: () -> Unit, openProgress:
             state.telemetry.latencyMs,
             state.headset.isBluetooth,
             state.settings.pitchSemitones
-        ), viewModel) }
+        ), viewModel, state.running) }
         PracticeRow(state.practice, state.settings.dailyGoalMin, openProgress, Modifier.staggerIn(4))
     }
 }
@@ -201,7 +202,10 @@ private fun rememberStartStopAction(viewModel: MainViewModel): () -> Unit {
     }
     val micLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> if (granted) startWithNotifications() }
+    ) { granted ->
+        // Android stops showing the dialog after two refusals, so say where to allow it.
+        if (granted) startWithNotifications() else Toast.makeText(context, R.string.mic_denied, Toast.LENGTH_LONG).show()
+    }
     val onStartStop: () -> Unit = {
         when {
             state.running -> viewModel.stop()
@@ -246,6 +250,14 @@ private fun NightStage(viewModel: MainViewModel) {
     val onStartStop = rememberStartStopAction(viewModel)
     val running = state.running
     val colors = MaterialTheme.colorScheme
+    val shortcutStart by startRequested.collectAsState()
+    val canShortcutStart = state.headset.canStart && state.settings.disclaimerAccepted
+    LaunchedEffect(shortcutStart, canShortcutStart) {
+        if (shortcutStart && canShortcutStart) {
+            startRequested.value = false
+            if (!running) onStartStop()
+        }
+    }
     val level by animateFloatAsState(
         if (running) levelFraction(state.telemetry.inputDb) else 0f,
         motionTween(80, LinearEasing),
@@ -393,7 +405,7 @@ private fun actualDelayLabel(actual: ActualDelay): String = when (actual) {
 
 /** Delay, sensitivity, pitch and volume: one panel, collapsed by default. */
 @Composable
-private fun ControlPanel(settings: Settings, actual: ActualDelay, viewModel: MainViewModel) {
+private fun ControlPanel(settings: Settings, actual: ActualDelay, viewModel: MainViewModel, running: Boolean) {
     var open by rememberSaveable { mutableStateOf(false) }
     val turn by animateFloatAsState(if (open) 180f else 0f, motionSpring(0.7f, 400f), label = "chevron")
     val delayLabel = stringResource(R.string.delay_label, settings.delayMs)
@@ -432,8 +444,14 @@ private fun ControlPanel(settings: Settings, actual: ActualDelay, viewModel: Mai
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 SensitivitySection(settings.sensitivity, viewModel::setSensitivity)
+                val calibrating by viewModel.calibrating.collectAsState()
+                TextButton(onClick = viewModel::calibrateSensitivity, enabled = running && !calibrating) {
+                    Text(stringResource(if (calibrating) R.string.calibrating else R.string.calibrate))
+                }
+                Caption(R.string.calibrate_caption)
                 PitchSection(settings.pitchSemitones, viewModel::setPitchSemitones)
                 VolumeSection(settings.outputGainDb, viewModel::setOutputGainDb)
+                PresetSection(settings.presets, viewModel)
             }
         }
     }
@@ -451,6 +469,40 @@ private fun SensitivitySection(sensitivity: Int, onSensitivityChange: (Int) -> U
         modifier = Modifier.semantics { contentDescription = label }
     )
     Caption(R.string.sensitivity_caption)
+}
+
+/** Three slots: Use applies a saved set, Save stores the current delay, sensitivity, pitch and volume. */
+@Composable
+private fun PresetSection(presets: List<Preset?>, viewModel: MainViewModel) {
+    Text(stringResource(R.string.presets_title), style = MaterialTheme.typography.titleMedium)
+    presets.forEachIndexed { slot, preset ->
+        val number = slot + 1
+        val useLabel = stringResource(R.string.preset_use_label, number)
+        val saveLabel = stringResource(R.string.preset_save_label, number)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (preset == null) {
+                    stringResource(R.string.preset_empty, number)
+                } else {
+                    stringResource(
+                        R.string.preset_label, number, preset.delayMs, preset.sensitivity, preset.pitchSemitones, preset.outputGainDb
+                    )
+                },
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(
+                onClick = { viewModel.applyPreset(slot) },
+                enabled = preset != null,
+                modifier = Modifier.semantics { contentDescription = useLabel }
+            ) { Text(stringResource(R.string.preset_use)) }
+            TextButton(
+                onClick = { viewModel.savePreset(slot) },
+                modifier = Modifier.semantics { contentDescription = saveLabel }
+            ) { Text(stringResource(R.string.preset_save)) }
+        }
+    }
+    Caption(R.string.presets_caption)
 }
 
 @Composable

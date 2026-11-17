@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -35,7 +36,31 @@ class SettingsRepository(context: Context) {
             dailyGoalMin = clampDailyGoalMin(prefs[DAILY_GOAL_MIN] ?: defaults.dailyGoalMin),
             reminderEnabled = prefs[REMINDER_ENABLED] ?: defaults.reminderEnabled,
             reminderMinute = clampReminderMinute(prefs[REMINDER_MINUTE] ?: defaults.reminderMinute),
+            sessionLimitMin = clampSessionLimitMin(prefs[SESSION_LIMIT_MIN] ?: defaults.sessionLimitMin),
+            presets = PRESETS.map { parsePreset(prefs[it]) },
         )
+    }
+
+    suspend fun setSessionLimitMin(min: Int) {
+        store.edit { it[SESSION_LIMIT_MIN] = clampSessionLimitMin(min) }
+    }
+
+    /** Stores the current delay, sensitivity, pitch and volume in slot 0..2. */
+    suspend fun savePreset(slot: Int) {
+        val s = settings.first()
+        store.edit { it[PRESETS[slot]] = encodePreset(Preset(s.delayMs, s.sensitivity, s.pitchSemitones, s.outputGainDb)) }
+    }
+
+    /** Applies slot 0..2. The delay is left alone while the fading program owns it. */
+    suspend fun applyPreset(slot: Int) {
+        val s = settings.first()
+        val preset = s.presets[slot] ?: return
+        store.edit {
+            if (!s.fadeEnabled) it[DELAY_MS] = preset.delayMs
+            it[SENSITIVITY] = preset.sensitivity
+            it[PITCH_SEMITONES] = preset.pitchSemitones
+            it[OUTPUT_GAIN_DB] = preset.outputGainDb
+        }
     }
 
     suspend fun setDelayMs(ms: Int) {
@@ -115,5 +140,7 @@ class SettingsRepository(context: Context) {
         val DAILY_GOAL_MIN = intPreferencesKey("daily_goal_min")
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
+        val SESSION_LIMIT_MIN = intPreferencesKey("session_limit_min")
+        val PRESETS = List(PRESET_SLOTS) { stringPreferencesKey("preset_${it + 1}") }
     }
 }

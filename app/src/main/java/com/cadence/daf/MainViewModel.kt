@@ -125,6 +125,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         practice.value = practiceStats(lines, today) to dailyMinutes(lines, today, 30)
     }
 
+    private val _calibrating = MutableStateFlow(false)
+    /** True during the 3 s room-noise measurement. */
+    val calibrating: StateFlow<Boolean> = _calibrating
+
+    /** Measures the room noise for 3 s while running and sets the sensitivity from it. */
+    fun calibrateSensitivity() {
+        if (_calibrating.value || !AudioService.running.value) return
+        _calibrating.value = true
+        viewModelScope.launch {
+            var peakDb = -90f
+            repeat(30) {
+                peakDb = maxOf(peakDb, NativeEngine.nativeGetInputRmsDb())
+                delay(100)
+            }
+            if (AudioService.running.value) {
+                repository.setSensitivity(suggestSensitivity(peakDb, NativeEngine.nativeGetFloorDb()))
+            }
+            _calibrating.value = false
+        }
+    }
+
+    /** The practice log as CSV text, for the share sheet. */
+    suspend fun practiceCsv(): String = (listOf("date,seconds") + practiceLog.readLines()).joinToString("\n")
+
+    fun setSessionLimitMin(min: Int) {
+        viewModelScope.launch { repository.setSessionLimitMin(min) }
+    }
+
+    fun savePreset(slot: Int) {
+        viewModelScope.launch { repository.savePreset(slot) }
+    }
+
+    fun applyPreset(slot: Int) {
+        viewModelScope.launch { repository.applyPreset(slot) }
+    }
+
     fun setDailyGoalMin(min: Int) {
         viewModelScope.launch { repository.setDailyGoalMin(min) }
     }

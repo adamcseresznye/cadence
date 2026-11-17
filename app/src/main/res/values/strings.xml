@@ -8,6 +8,8 @@
     <string name="no_headset_mic">Using the phone microphone. Keep the phone close to your mouth.</string>
     <string name="quiet_mic">Not hearing your voice yet. If you are speaking, move the microphone closer to your mouth.</string>
     <string name="start_blocked_call">Cadence cannot start during a call.</string>
+    <string name="start_failed">Could not start the audio (code %1$d). Unplug your headphones, plug them in again and press Start.</string>
+    <string name="mic_denied">Cadence needs the microphone to hear your voice. Allow it under Settings, Apps, Cadence, Permissions.</string>
     <string name="bluetooth_delay">Bluetooth adds extra delay. Wired earbuds work best.</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
@@ -94,6 +96,21 @@
     <string name="reminder_channel">Practice reminders</string>
     <string name="reminder_title">Time to practise</string>
     <string name="reminder_text">A few minutes today keeps your practice going.</string>
+    <string name="shortcut_start">Start practice</string>
+    <string name="export_history">Export practice history</string>
+    <string name="session_limit">Stop automatically</string>
+    <string name="session_limit_caption">Ends practice after this many minutes. Applies from the next Start.</string>
+    <string name="presets_title">Presets</string>
+    <string name="preset_empty">Preset %1$d: empty</string>
+    <string name="preset_label">Preset %1$d: %2$d ms, sensitivity %3$d, pitch %4$+d, %5$d dB</string>
+    <string name="preset_use">Use</string>
+    <string name="preset_save">Save</string>
+    <string name="preset_use_label">Use preset %1$d</string>
+    <string name="preset_save_label">Save preset %1$d</string>
+    <string name="presets_caption">Save stores the current delay, sensitivity, pitch and volume.</string>
+    <string name="calibrate">Match to room noise</string>
+    <string name="calibrating">Stay quiet for 3 seconds…</string>
+    <string name="calibrate_caption">Press while practising and stay quiet. Sets the sensitivity from the noise around you.</string>
     <string name="ok">OK</string>
     <string name="goal_caption">Minutes of practice per day. A guide, not a rule.</string>
 </resources>
