@@ -1,0 +1,1 @@
+Progress has a month calendar you can browse back through and a 7 or 30-day line chart with tap-to-read values, plus your all-time total. Bigger delay ring, a named delay slider, a new slider design and calmer animations.

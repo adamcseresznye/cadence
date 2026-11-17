@@ -4,7 +4,7 @@
 
 <p align="center"><b>Delayed auditory feedback</b></p>
 
-Cadence is an Android app that plays your own voice back to you with a short delay, for speech practice.
+Cadence is an Android app that plays your own voice back to you with a short delay.
 
 <p align="center">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_main.png" width="200" alt="Main screen">
@@ -28,7 +28,7 @@ Cadence plays your own voice back to you through wired earbuds, delayed by 40 to
 - **Runs in the background:** the notification has Stop, Mute and a delay button (60, 100, 150 ms), so it works with the screen off.
 - **Stops when it should:** practice stops when you unplug the earbuds, when a call comes in, when another app starts playing, or when you swipe the app away.
 - **Helpful hints:** a timer shows how long you have practised, and a hint appears if the microphone is too quiet to hear you.
-- **Progress:** a daily goal (off, 5, 10, 15 or 20 minutes), a 30-day calendar and totals. Only the date and length of each session are saved.
+- **Progress:** a daily goal (off, 5, 10, 15 or 20 minutes), a month calendar you can browse back through, a 7 or 30-day line chart and your all-time total. Only the date and length of each session are saved.
 - **Daily reminder (optional):** one notification at a time you choose, skipped when you have already practised that day.
 
 ## Why wired earbuds
@@ -56,7 +56,7 @@ cmake -S native-tests -B build/native-tests -DCMAKE_BUILD_TYPE=Debug && cmake --
 
 ## Release
 
-- Version name: 0.1.0
+- Version name: 0.2.0
 - Bundle: app/build/outputs/bundle/release/app-release.aab
 - Signing keys are not stored in this repository.
 
@@ -70,4 +70,4 @@ Cadence is free software under the [GNU General Public License v3.0](LICENSE). l
 
 ## Medical disclaimer
 
-Cadence is a practice tool, not a medical device. It does not diagnose or treat any condition. For speech therapy, talk to a qualified speech-language therapist.
+Cadence is a practice tool, not a medical device. It does not diagnose or treat any condition.

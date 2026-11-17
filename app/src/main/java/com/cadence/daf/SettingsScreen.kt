@@ -81,7 +81,7 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
         GroupTitle(R.string.about)
         SectionCard {
             Text(stringResource(R.string.about_text))
-            Text(stringResource(R.string.disclaimer_text), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.about_disclaimer), style = MaterialTheme.typography.bodySmall)
             Text(
                 stringResource(R.string.version, version),
                 style = MaterialTheme.typography.bodySmall,

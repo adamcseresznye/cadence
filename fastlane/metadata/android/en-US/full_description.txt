@@ -9,7 +9,7 @@ Cadence plays your own voice back to you through wired earbuds, delayed by 40 to
 <li><b>Fading program:</b> lowers the delay a little every week, down to 40 ms.</li>
 <li><b>Runs in the background:</b> the notification has Stop, Mute and delay buttons, so it works with the screen off.</li>
 <li><b>Stops when it should:</b> when you unplug the earbuds, when a call comes in, when another app starts playing, or when you swipe the app away.</li>
-<li><b>Progress:</b> a daily goal, a 30-day calendar, totals and an optional daily reminder.</li>
+<li><b>Progress:</b> a daily goal, a month calendar you can browse back through, a 7 or 30-day line chart, your all-time total and an optional daily reminder.</li>
 </ul>
 
 <b>What you need</b>
@@ -19,4 +19,4 @@ Android 8.0 or newer and wired earbuds with a microphone. Never use the phone sp
 The audio never leaves the phone and is never stored. No account, no ads, no analytics, no internet access. Only the date and length of each session are saved.
 
 <b>Medical disclaimer</b>
-Cadence is a practice tool, not a medical device. It does not diagnose or treat any condition. For speech therapy, talk to a qualified speech-language therapist.
+Cadence is a practice tool, not a medical device. It does not diagnose or treat any condition.

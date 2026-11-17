@@ -10,6 +10,19 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -20,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -163,6 +177,7 @@ fun ScreenScaffold(
 }
 
 /** Slider in the Night Focus palette: mist teal active track and thumb, quiet inactive track. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CadenceSlider(
     value: Float,
@@ -173,6 +188,12 @@ fun CadenceSlider(
     enabled: Boolean = true
 ) {
     val colors = MaterialTheme.colorScheme
+    val source = remember { MutableInteractionSource() }
+    val dragged by source.collectIsDraggedAsState()
+    val grow by animateFloatAsState(if (dragged) 1.2f else 1f, motionSpring(1f, 500f), label = "thumb")
+    val active = if (enabled) colors.primary else colors.outline
+    val inactive = colors.outlineVariant
+    val ring = colors.surfaceContainer
     Slider(
         value = value,
         onValueChange = onValueChange,
@@ -180,20 +201,34 @@ fun CadenceSlider(
         steps = steps,
         modifier = modifier,
         enabled = enabled,
-        colors = SliderDefaults.colors(
-            thumbColor = colors.primary,
-            activeTrackColor = colors.primary,
-            inactiveTrackColor = colors.surfaceVariant,
-            disabledThumbColor = colors.outline,
-            disabledActiveTrackColor = colors.outline,
-            disabledInactiveTrackColor = colors.surfaceVariant,
-            activeTickColor = Color.Transparent,
-            inactiveTickColor = Color.Transparent,
-            disabledActiveTickColor = Color.Transparent,
-            disabledInactiveTickColor = Color.Transparent
-        )
+        interactionSource = source,
+        // Round thumb with a ring in the card colour, over a thin rounded track.
+        thumb = {
+            Box(
+                Modifier
+                    .size(SLIDER_THUMB)
+                    .graphicsLayer { scaleX = grow; scaleY = grow }
+                    .background(ring, CircleShape)
+                    .padding(3.dp)
+                    .background(active, CircleShape)
+            )
+        },
+        track = { state ->
+            val fraction = ((state.value - state.valueRange.start) / (state.valueRange.endInclusive - state.valueRange.start)).coerceIn(0f, 1f)
+            Canvas(Modifier.fillMaxWidth().height(SLIDER_THUMB)) {
+                val half = SLIDER_THUMB.toPx() / 2
+                val thickness = 6.dp.toPx()
+                val top = (size.height - thickness) / 2
+                val corner = CornerRadius(thickness / 2)
+                drawRoundRect(inactive, Offset(0f, top), Size(size.width, thickness), corner)
+                // The thumb centre travels from half a thumb in to half a thumb short of the end.
+                drawRoundRect(active, Offset(0f, top), Size(half + fraction * (size.width - 2 * half), thickness), corner)
+            }
+        }
     )
 }
+
+private val SLIDER_THUMB = 26.dp
 
 /** Small explanatory line under a setting. */
 @Composable

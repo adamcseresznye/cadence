@@ -47,6 +47,7 @@
     <string name="notification_channel">Cadence running</string>
     <string name="notification_title">Cadence is running</string>
     <string name="notification_text">Playing your voice with a delay</string>
+    <string name="about_disclaimer">Cadence is a practice tool, not a medical device. It does not diagnose or treat any condition.</string>
     <string name="disclaimer_text">Cadence is a practice tool, not a medical device. It does not diagnose or treat any condition. For speech therapy, talk to a qualified speech-language therapist.</string>
     <string name="disclaimer_ok">I understand</string>
     <string name="hero_idle">Ready when you are</string>
