@@ -73,6 +73,12 @@
     <string name="progress_week">Last 7 days: %1$d min on %2$s</string>
     <string name="progress_month">Last 30 days: %1$d min</string>
     <string name="progress_all_time">All time: %1$d h %2$d min</string>
+    <string name="stat_week">7 days</string>
+    <string name="stat_month">30 days</string>
+    <string name="stat_all_time">All time</string>
+    <string name="stat_unit_min">min</string>
+    <string name="stat_unit_min_days">min · %1$s</string>
+    <string name="stat_unit_hours">h · %1$d min</string>
     <string name="daily_goal">Daily goal</string>
     <string name="goal_off">Off</string>
     <string name="goal_minutes">%1$d min</string>

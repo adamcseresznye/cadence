@@ -43,8 +43,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.style.TextAlign
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 
 internal val GOAL_CHOICES = listOf(0, 5, 10, 15, 20)
 
@@ -77,15 +84,27 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
         }
         SectionCard {
             DayChart(state.last30Days, goal, stats.monthMin, stats.monthDays)
-            Text(
-                stringResource(
-                    R.string.progress_week,
-                    stats.weekMin,
-                    pluralStringResource(R.plurals.days_count, stats.weekDays, stats.weekDays)
+            val weekDays = pluralStringResource(R.plurals.days_count, stats.weekDays, stats.weekDays)
+            val monthDays = pluralStringResource(R.plurals.days_count, stats.monthDays, stats.monthDays)
+            val allHours = stats.allTimeMin >= 60
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatTile(
+                    Modifier.weight(1f), stringResource(R.string.stat_week), stats.weekMin.toString(),
+                    stringResource(R.string.stat_unit_min_days, weekDays),
+                    stringResource(R.string.progress_week, stats.weekMin, weekDays)
                 )
-            )
-            Text(stringResource(R.string.progress_month, stats.monthMin))
-            Text(stringResource(R.string.progress_all_time, stats.allTimeMin / 60, stats.allTimeMin % 60))
+                StatTile(
+                    Modifier.weight(1f), stringResource(R.string.stat_month), stats.monthMin.toString(),
+                    stringResource(R.string.stat_unit_min_days, monthDays),
+                    stringResource(R.string.progress_month, stats.monthMin)
+                )
+                StatTile(
+                    Modifier.weight(1f), stringResource(R.string.stat_all_time),
+                    if (allHours) (stats.allTimeMin / 60).toString() else stats.allTimeMin.toString(),
+                    if (allHours) stringResource(R.string.stat_unit_hours, stats.allTimeMin % 60) else stringResource(R.string.stat_unit_min),
+                    stringResource(R.string.progress_all_time, stats.allTimeMin / 60, stats.allTimeMin % 60)
+                )
+            }
         }
         SectionCard {
             Text(stringResource(R.string.daily_goal), style = MaterialTheme.typography.titleMedium)
@@ -118,6 +137,24 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } }
         )
+    }
+}
+
+/** One number with its unit and period. The spoken label is the full sentence, so the pieces are merged. */
+@Composable
+private fun StatTile(modifier: Modifier, label: String, value: String, unit: String, spoken: String) {
+    val colors = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.medium)
+            .background(colors.surfaceContainerHigh)
+            .padding(horizontal = 8.dp, vertical = 12.dp)
+            .semantics(mergeDescendants = true) { contentDescription = spoken },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(value, style = MaterialTheme.typography.headlineSmall, color = colors.primary, maxLines = 1)
+        Text(unit, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
@@ -166,6 +203,18 @@ private fun DayChart(days: List<DayTotal>, goal: Int, monthMin: Int, monthDays: 
     val rows = remember(days) { heatmapRows(days) }
     var selected by remember { mutableStateOf<LocalDate?>(null) }
     val picked = days.firstOrNull { it.date == selected }
+    // Monday first, like the grid; letters follow the phone's language.
+    Row(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
+        DayOfWeek.values().forEach { d ->
+            Text(
+                d.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onSurfaceVariant
+            )
+        }
+    }
     Canvas(
         Modifier
             .fillMaxWidth()
