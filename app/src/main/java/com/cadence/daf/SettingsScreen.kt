@@ -1,11 +1,13 @@
 package com.cadence.daf
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
@@ -16,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,14 +31,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
+/** Three groups (DESIGN.md section 36): background noise, sound, practice routine; then About. */
 @Composable
 fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -> Unit) {
     val state by viewModel.uiState.collectAsState()
+    val settings = state.settings
     val context = LocalContext.current
     val version = remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }
     var versionTaps by remember { mutableIntStateOf(0) }
@@ -47,18 +53,33 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
             Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineMedium)
         }
 
+        GroupTitle(R.string.group_noise)
+        SectionCard {
+            SwitchRow(
+                R.string.noise_reduction_switch, R.string.noise_reduction_caption,
+                settings.noiseReduction, viewModel::setNoiseReduction
+            )
+        }
+        SectionCard {
+            SwitchRow(R.string.gate_switch, R.string.gate_caption, settings.gateEnabled, viewModel::setGateEnabled)
+            if (settings.gateEnabled) SensitivitySection(settings.sensitivity, state.running, viewModel)
+        }
+
+        GroupTitle(R.string.group_sound)
         SectionCard { MicSection(state) { viewModel.setMicPreset(it) } }
-        SectionCard { GateRow(state.settings.gateEnabled, viewModel::setGateEnabled) }
-        SectionCard { MaskingSection(state.settings, viewModel) }
-        SectionCard { FadeSection(state.settings, viewModel) }
+        SectionCard { MaskingSection(settings, viewModel) }
+
+        GroupTitle(R.string.group_practice)
+        SectionCard { FadeSection(settings, viewModel) }
         SectionCard {
             Text(stringResource(R.string.session_limit), style = MaterialTheme.typography.titleMedium)
             Caption(R.string.session_limit_caption)
-            MinuteChips(SESSION_LIMIT_CHOICES, state.settings.sessionLimitMin, viewModel::setSessionLimitMin)
+            MinuteChips(SESSION_LIMIT_CHOICES, settings.sessionLimitMin, viewModel::setSessionLimitMin)
         }
-        SectionCard { ReminderSection(state.settings, viewModel) }
+        SectionCard { ReminderSection(settings, viewModel) }
+
+        GroupTitle(R.string.about)
         SectionCard {
-            Text(stringResource(R.string.about), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.about_text))
             Text(stringResource(R.string.disclaimer_text), style = MaterialTheme.typography.bodySmall)
             Text(
@@ -75,6 +96,56 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
             )
         }
     }
+}
+
+/** Small heading above a group of cards. */
+@Composable
+private fun GroupTitle(@StringRes id: Int) {
+    Text(
+        stringResource(id),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 8.dp).semantics { heading() }
+    )
+}
+
+/** Title, caption and a switch; the whole row toggles. */
+@Composable
+private fun SwitchRow(@StringRes title: Int, @StringRes caption: Int, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 56.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(stringResource(title))
+            Caption(caption)
+        }
+        Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+/** Gate sensitivity and the room-noise button; shown only while the gate is on. */
+@Composable
+private fun SensitivitySection(sensitivity: Int, running: Boolean, viewModel: MainViewModel) {
+    val calibrating by viewModel.calibrating.collectAsState()
+    val label = stringResource(R.string.sensitivity_label, sensitivity)
+    Text(label)
+    CadenceSlider(
+        value = sensitivity.toFloat(),
+        onValueChange = { viewModel.setSensitivity(it.roundToInt()) },
+        valueRange = 0f..10f,
+        steps = 9,
+        modifier = Modifier.semantics { contentDescription = label }
+    )
+    Caption(R.string.sensitivity_caption)
+    TextButton(onClick = viewModel::calibrateSensitivity, enabled = running && !calibrating) {
+        Text(stringResource(if (calibrating) R.string.calibrating else R.string.calibrate))
+    }
+    Caption(R.string.calibrate_caption)
 }
 
 @Composable
@@ -110,38 +181,11 @@ private fun MicSection(state: UiState, onSelect: (Int) -> Unit) {
     }
 }
 
-@Composable
-private fun GateRow(enabled: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = 56.dp)
-            .toggleable(value = enabled, role = Role.Switch, onValueChange = onChange),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(stringResource(R.string.gate_switch))
-            Caption(R.string.gate_caption)
-        }
-        Switch(checked = enabled, onCheckedChange = null)
-    }
-}
-
+/** The volume slider shows only while masking is on. */
 @Composable
 private fun MaskingSection(settings: Settings, viewModel: MainViewModel) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = 56.dp)
-            .toggleable(value = settings.maskingEnabled, role = Role.Switch, onValueChange = viewModel::setMaskingEnabled),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(stringResource(R.string.masking_switch), modifier = Modifier.weight(1f))
-        Switch(checked = settings.maskingEnabled, onCheckedChange = null)
-    }
-    Caption(R.string.masking_caption)
+    SwitchRow(R.string.masking_switch, R.string.masking_caption, settings.maskingEnabled, viewModel::setMaskingEnabled)
+    if (!settings.maskingEnabled) return
     val label = stringResource(R.string.masking_label, settings.maskingDb)
     Text(label)
     CadenceSlider(
@@ -149,26 +193,16 @@ private fun MaskingSection(settings: Settings, viewModel: MainViewModel) {
         onValueChange = { viewModel.setMaskingDb(it.roundToInt()) },
         valueRange = -40f..-10f,
         steps = 29,
-        enabled = settings.maskingEnabled,
         modifier = Modifier.semantics { contentDescription = label }
     )
 }
 
+/** The two sliders and this week's delay show only while the program is on. */
 @Composable
 private fun FadeSection(settings: Settings, viewModel: MainViewModel) {
+    SwitchRow(R.string.fade_switch, R.string.fade_caption, settings.fadeEnabled, viewModel::setFadeEnabled)
+    if (!settings.fadeEnabled) return
     val thisWeek = programDelayMs(settings.fadeStartMs, settings.fadeStepMs, settings.fadeStartDay, LocalDate.now().toEpochDay())
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = 56.dp)
-            .toggleable(value = settings.fadeEnabled, role = Role.Switch, onValueChange = viewModel::setFadeEnabled),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(stringResource(R.string.fade_switch), modifier = Modifier.weight(1f))
-        Switch(checked = settings.fadeEnabled, onCheckedChange = null)
-    }
-    Caption(R.string.fade_caption)
     val startLabel = stringResource(R.string.fade_start_label, settings.fadeStartMs)
     Text(startLabel)
     CadenceSlider(

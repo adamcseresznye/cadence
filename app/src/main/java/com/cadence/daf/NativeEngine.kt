@@ -17,6 +17,7 @@ object NativeEngine {
     external fun nativeSetMuted(muted: Boolean)
     // Masking noise level -40..-10 dB; any lower value (MASKING_OFF_DB) turns it off.
     external fun nativeSetMaskingDb(db: Int)
+    external fun nativeSetNoiseReduction(enabled: Boolean)
 
     // State codes: 0 Idle, 1 Running, 2 Error.
     external fun nativeGetState(): Int

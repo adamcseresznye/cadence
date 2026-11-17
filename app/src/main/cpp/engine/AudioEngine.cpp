@@ -78,11 +78,13 @@ int AudioEngine::start(const EngineConfig& config) {
   closeStreams();
   state_.store(static_cast<int>(EngineState::Idle));
   scratch_.assign(kMaxBlock, 0.0f);
-  delayLine_.reset(requestedDelaySamples_.load(std::memory_order_relaxed));
+  // The denoiser in front of the delay line is always kDenoiserLatencySamples late.
+  delayLine_.reset(requestedDelaySamples_.load(std::memory_order_relaxed) - kDenoiserLatencySamples);
   underruns_.store(0);
   inputRmsDb_.store(kLevelFloorDb);
   firstCallback_ = true;
-  if (!vad_.ok()) {
+  denoiser_.reset();
+  if (!vad_.ok() || !denoiser_.ok()) {
     return fail(kStartStreamStartFailed);
   }
   vad_.reset();
@@ -139,6 +141,10 @@ void AudioEngine::setMuted(bool muted) {
 
 void AudioEngine::setMaskingDb(int db) {
   maskingDb_.store(db);
+}
+
+void AudioEngine::setNoiseReduction(bool enabled) {
+  noiseReduction_.store(enabled);
 }
 
 void AudioEngine::stop() {
@@ -227,7 +233,8 @@ void AudioEngine::process(float* out, int32_t numFrames) {
 }
 
 void AudioEngine::applySettings() {
-  const int requested = requestedDelaySamples_.load(std::memory_order_relaxed);
+  denoiser_.setEnabled(noiseReduction_.load());
+  const int requested = requestedDelaySamples_.load(std::memory_order_relaxed) - kDenoiserLatencySamples;
   if (requested != delayLine_.targetDelay()) {
     delayLine_.setDelay(requested);
   }
@@ -259,8 +266,8 @@ float AudioEngine::renderGated(const float* in, float* out, int32_t numFrames) {
   const bool muted = muted_.load();
   float gain = 1.0f;
   for (int32_t i = 0; i < numFrames; ++i) {
-    const int delay = delayLine_.gateDelay();
-    const float delayed = delayLine_.process(in[i]);
+    const int delay = delayLine_.gateDelay() + kDenoiserLatencySamples;
+    const float delayed = delayLine_.process(denoiser_.process(in[i]));
     const int64_t playPos = sampleIndex_ - delay;
     gain = gateOn ? gate_.nextGain(playPos, timeline_) : 1.0f;
     // The masking noise follows the gate, so it sounds only while the voice does.

@@ -9,6 +9,7 @@
 
 #include "dsp/Constants.h"
 #include "dsp/DelayLine.h"
+#include "dsp/Denoiser.h"
 #include "dsp/FrameAnalyzer.h"
 #include "dsp/FvadVad.h"
 #include "dsp/GateStage.h"
@@ -52,6 +53,7 @@ class AudioEngine {
   void setOutputGainDb(int db);
   void setMuted(bool muted);
   void setMaskingDb(int db);
+  void setNoiseReduction(bool enabled);
   // Input + output latency reported by Oboe, or -1 when not running. Not for the callback.
   float latencyMs();
 
@@ -94,6 +96,7 @@ class AudioEngine {
   VoiceLeveler leveler_;
   MaskingNoise masking_;
   SpeechFilter speechFilter_;
+  Denoiser denoiser_;
   int appliedMaskingDb_ = kMaskingOffDb;
   float outputGain_ = 1.0f;
   int64_t sampleIndex_ = 0;
@@ -114,6 +117,7 @@ class AudioEngine {
   std::atomic<int> outputGainDb_{kDefaultOutputGainDb};
   std::atomic<bool> muted_{false};
   std::atomic<int> maskingDb_{kMaskingOffDb};
+  std::atomic<bool> noiseReduction_{false};
   std::atomic<float> floorDb_{kNoiseFloorStartDb};
   std::atomic<bool> gateOpen_{false};
   std::atomic<bool> speechDetected_{false};

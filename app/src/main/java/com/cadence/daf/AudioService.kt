@@ -101,6 +101,7 @@ class AudioService : Service() {
                 NativeEngine.nativeSetPitchSemitones(settings.pitchSemitones)
                 NativeEngine.nativeSetOutputGainDb(settings.outputGainDb)
                 NativeEngine.nativeSetMaskingDb(settings.engineMaskingDb)
+                NativeEngine.nativeSetNoiseReduction(settings.noiseReduction)
                 delayMs = settings.delayMs
                 fadeEnabled = settings.fadeEnabled
                 refreshNotification()

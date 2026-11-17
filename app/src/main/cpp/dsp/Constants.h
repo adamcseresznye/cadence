@@ -34,6 +34,7 @@ constexpr float kSpeechLevelRate = 0.05f;       // per speech frame
 constexpr float kVoiceLevelerSmoothMs = 200.0f;
 constexpr float kVoiceHighPassHz = 120.0f;  // below: hum and rumble
 constexpr float kVoiceLowPassHz = 6000.0f;  // above: hiss, little speech
+constexpr int kDenoiserLatencySamples = 960;  // one frame of buffering + one frame inside RNNoise
 constexpr int kMinMaskingDb = -40;
 constexpr int kMaxMaskingDb = -10;
 constexpr int kMaskingOffDb = -100;  // any value below kMinMaskingDb means off

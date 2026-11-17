@@ -17,12 +17,13 @@ include(GoogleTest)
 
 set(CADENCE_CPP "${CMAKE_CURRENT_SOURCE_DIR}/../app/src/main/cpp")
 include(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/fvad.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/rnnoise.cmake)
 
 file(GLOB TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)
 file(GLOB DSP_SOURCES CONFIGURE_DEPENDS ${CADENCE_CPP}/dsp/*.cpp)
 
 add_executable(dsp_tests ${TEST_SOURCES} ${DSP_SOURCES})
 target_include_directories(dsp_tests PRIVATE ${CADENCE_CPP})
-target_link_libraries(dsp_tests PRIVATE GTest::gtest_main fvad)
+target_link_libraries(dsp_tests PRIVATE GTest::gtest_main fvad rnnoise)
 
 gtest_discover_tests(dsp_tests)

@@ -116,7 +116,7 @@ fun MainScreen(viewModel: MainViewModel, openSettings: () -> Unit, openProgress:
             state.telemetry.latencyMs,
             state.headset.isBluetooth,
             state.settings.pitchSemitones
-        ), viewModel, state.running) }
+        ), viewModel) }
         PracticeRow(state.practice, state.settings.dailyGoalMin, openProgress, Modifier.staggerIn(4))
     }
 }
@@ -405,7 +405,7 @@ private fun actualDelayLabel(actual: ActualDelay): String = when (actual) {
 
 /** Delay, sensitivity, pitch and volume: one panel, collapsed by default. */
 @Composable
-private fun ControlPanel(settings: Settings, actual: ActualDelay, viewModel: MainViewModel, running: Boolean) {
+private fun ControlPanel(settings: Settings, actual: ActualDelay, viewModel: MainViewModel) {
     var open by rememberSaveable { mutableStateOf(false) }
     val turn by animateFloatAsState(if (open) 180f else 0f, motionSpring(0.7f, 400f), label = "chevron")
     val delayLabel = stringResource(R.string.delay_label, settings.delayMs)
@@ -443,32 +443,12 @@ private fun ControlPanel(settings: Settings, actual: ActualDelay, viewModel: Mai
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                SensitivitySection(settings.sensitivity, viewModel::setSensitivity)
-                val calibrating by viewModel.calibrating.collectAsState()
-                TextButton(onClick = viewModel::calibrateSensitivity, enabled = running && !calibrating) {
-                    Text(stringResource(if (calibrating) R.string.calibrating else R.string.calibrate))
-                }
-                Caption(R.string.calibrate_caption)
-                PitchSection(settings.pitchSemitones, viewModel::setPitchSemitones)
                 VolumeSection(settings.outputGainDb, viewModel::setOutputGainDb)
+                PitchSection(settings.pitchSemitones, viewModel::setPitchSemitones)
                 PresetSection(settings.presets, viewModel)
             }
         }
     }
-}
-
-@Composable
-private fun SensitivitySection(sensitivity: Int, onSensitivityChange: (Int) -> Unit) {
-    val label = stringResource(R.string.sensitivity_label, sensitivity)
-    Text(label, style = MaterialTheme.typography.titleMedium)
-    CadenceSlider(
-        value = sensitivity.toFloat(),
-        onValueChange = { onSensitivityChange(it.roundToInt()) },
-        valueRange = 0f..10f,
-        steps = 9,
-        modifier = Modifier.semantics { contentDescription = label }
-    )
-    Caption(R.string.sensitivity_caption)
 }
 
 /** Three slots: Use applies a saved set, Save stores the current delay, sensitivity, pitch and volume. */

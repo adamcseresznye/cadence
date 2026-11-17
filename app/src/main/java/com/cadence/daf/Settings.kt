@@ -19,6 +19,7 @@ data class Settings(
     val presets: List<Preset?> = List(PRESET_SLOTS) { null },
     val maskingEnabled: Boolean = false,
     val maskingDb: Int = -25,
+    val noiseReduction: Boolean = false,
 ) {
     /** The value for nativeSetMaskingDb: the level, or MASKING_OFF_DB when masking is off. */
     val engineMaskingDb: Int get() = if (maskingEnabled) maskingDb else MASKING_OFF_DB

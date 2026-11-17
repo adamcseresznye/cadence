@@ -68,6 +68,12 @@ Java_com_cadence_daf_NativeEngine_nativeSetMaskingDb(JNIEnv* /* env */, jobject 
   engine.setMaskingDb(db);
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_com_cadence_daf_NativeEngine_nativeSetNoiseReduction(JNIEnv* /* env */, jobject /* thiz */,
+                                                          jboolean enabled) {
+  engine.setNoiseReduction(enabled == JNI_TRUE);
+}
+
 extern "C" JNIEXPORT jint JNICALL
 Java_com_cadence_daf_NativeEngine_nativeGetState(JNIEnv* /* env */, jobject /* thiz */) {
   return static_cast<jint>(engine.state());

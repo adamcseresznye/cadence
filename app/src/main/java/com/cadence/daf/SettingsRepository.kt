@@ -40,7 +40,12 @@ class SettingsRepository(context: Context) {
             presets = PRESETS.map { parsePreset(prefs[it]) },
             maskingEnabled = prefs[MASKING_ENABLED] ?: defaults.maskingEnabled,
             maskingDb = clampMaskingDb(prefs[MASKING_DB] ?: defaults.maskingDb),
+            noiseReduction = prefs[NOISE_REDUCTION] ?: defaults.noiseReduction,
         )
+    }
+
+    suspend fun setNoiseReduction(enabled: Boolean) {
+        store.edit { it[NOISE_REDUCTION] = enabled }
     }
 
     suspend fun setMaskingEnabled(enabled: Boolean) {
@@ -150,7 +155,8 @@ class SettingsRepository(context: Context) {
         val DAILY_GOAL_MIN = intPreferencesKey("daily_goal_min")
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
-        val MASKING_ENABLED = booleanPreferencesKey("masking_enabled")
+        val NOISE_REDUCTION = booleanPreferencesKey("noise_reduction")
+        val MASKING_ENABLED =booleanPreferencesKey("masking_enabled")
         val MASKING_DB = intPreferencesKey("masking_db")
         val SESSION_LIMIT_MIN =intPreferencesKey("session_limit_min")
         val PRESETS = List(PRESET_SLOTS) { stringPreferencesKey("preset_${it + 1}") }

@@ -87,6 +87,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 NativeEngine.nativeSetPitchSemitones(settings.pitchSemitones)
                 NativeEngine.nativeSetOutputGainDb(settings.outputGainDb)
                 NativeEngine.nativeSetMaskingDb(settings.engineMaskingDb)
+                NativeEngine.nativeSetNoiseReduction(settings.noiseReduction)
             }
         }
         viewModelScope.launch {
@@ -149,6 +150,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /** The practice log as CSV text, for the share sheet. */
     suspend fun practiceCsv(): String = (listOf("date,seconds") + practiceLog.readLines()).joinToString("\n")
+
+    fun setNoiseReduction(enabled: Boolean) {
+        viewModelScope.launch { repository.setNoiseReduction(enabled) }
+    }
 
     fun setMaskingEnabled(enabled: Boolean) {
         viewModelScope.launch { repository.setMaskingEnabled(enabled) }

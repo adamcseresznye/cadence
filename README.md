@@ -66,7 +66,7 @@ The audio never leaves the phone and is never stored. No account, no ads, no ana
 
 ## License
 
-Cadence is free software under the [GNU General Public License v3.0](LICENSE). libfvad in third_party/libfvad keeps its own BSD license.
+Cadence is free software under the [GNU General Public License v3.0](LICENSE). libfvad in third_party/libfvad and RNNoise in third_party/rnnoise keep their own BSD licenses.
 
 ## Medical disclaimer
 

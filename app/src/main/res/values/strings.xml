@@ -88,7 +88,7 @@
     <string name="sensitivity_caption">How easily speech opens the gate. Higher picks up quieter speech but lets in more noise.</string>
     <string name="pitch_caption">Raises or lowers your voice. Adds about 15 ms of delay.</string>
     <string name="volume_caption">Loudness in your earbuds. 0 dB is the loudest.</string>
-    <string name="fade_caption">Lowers the delay a little every week, down to 40 ms. The delay slider is locked while this is on.</string>
+    <string name="fade_caption">Lowers the delay a little every week, down to 40 ms. Locks the delay slider.</string>
     <string name="reminder_switch">Daily reminder</string>
     <string name="reminder_caption">One notification a day. Skipped when you have already practised.</string>
     <string name="reminder_battery_hint">Not arriving? Set Cadence to Unrestricted under Settings, Apps, Cadence, Battery. It can still be up to 10 minutes late.</string>
@@ -96,6 +96,11 @@
     <string name="reminder_channel">Practice reminders</string>
     <string name="reminder_title">Time to practise</string>
     <string name="reminder_text">A few minutes today keeps your practice going.</string>
+    <string name="group_noise">Background noise</string>
+    <string name="group_sound">Sound</string>
+    <string name="group_practice">Practice routine</string>
+    <string name="noise_reduction_switch">Noise reduction</string>
+    <string name="noise_reduction_caption">Removes traffic, hum and hiss from your voice, also while you speak.</string>
     <string name="masking_switch">Masking noise</string>
     <string name="masking_caption">Adds a soft hiss while you speak, so you hear your own voice less. The noise is generated, not recorded. Keep it as low as works for you.</string>
     <string name="masking_label">Noise volume: %1$d dB</string>
@@ -113,7 +118,7 @@
     <string name="presets_caption">Save stores the current delay, sensitivity, pitch and volume.</string>
     <string name="calibrate">Match to room noise</string>
     <string name="calibrating">Stay quiet for 3 seconds…</string>
-    <string name="calibrate_caption">Press while practising and stay quiet. Sets the sensitivity from the noise around you.</string>
+    <string name="calibrate_caption">Works while practice is running. Stay quiet and it sets the sensitivity from the noise around you.</string>
     <string name="ok">OK</string>
     <string name="goal_caption">Minutes of practice per day. A guide, not a rule.</string>
 </resources>
