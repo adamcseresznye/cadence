@@ -26,7 +26,7 @@ data class UiState(
     val headset: HeadsetState,
     val running: Boolean,
     val error: String?,
-    val telemetry: Telemetry,
+
     val practice: PracticeStats = PracticeStats(0, 0, 0, 0, 0, 0),
     val last30Days: List<DayTotal> = emptyList(),
 )
@@ -34,7 +34,9 @@ data class UiState(
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = SettingsRepository(application)
     private val headsetMonitor = HeadsetMonitor(application)
-    private val telemetry = MutableStateFlow(Telemetry())
+    private val _telemetry = MutableStateFlow(Telemetry())
+    /** Live values, 10 per second while running. Kept out of uiState so only the parts that show them recompose. */
+    val telemetry: StateFlow<Telemetry> = _telemetry
     private val practiceLog = PracticeLogStore(application)
     private val practice = MutableStateFlow(PracticeStats(0, 0, 0, 0, 0, 0) to emptyList<DayTotal>())
     private val sessionEvents = Channel<Int>(Channel.BUFFERED)
@@ -47,13 +49,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         headsetMonitor.state,
         AudioService.running,
         AudioService.lastError,
-        combine(telemetry, practice) { latest, days -> latest to days },
-    ) { settings, headset, running, error, (latest, days) ->
-        UiState(settings, headset, running, error, latest, days.first, days.second)
+        practice,
+    ) { settings, headset, running, error, days ->
+        UiState(settings, headset, running, error, days.first, days.second)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        UiState(Settings(disclaimerAccepted = true), HeadsetState(), running = false, error = null, telemetry = Telemetry()),
+        UiState(Settings(disclaimerAccepted = true), HeadsetState(), running = false, error = null),
     )
 
     init {
@@ -101,8 +103,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     peakDb = maxOf(peakDb, inputDb)
                     heardSpeech = heardSpeech || speech
                     val elapsedMs = SystemClock.elapsedRealtime() - AudioService.startedAtMs.value
-                    telemetry.value = Telemetry(
-                        latencyMs = if (raw >= 0f) smoothLatency(telemetry.value.latencyMs, raw) else null,
+                    _telemetry.value = Telemetry(
+                        latencyMs = if (raw >= 0f) smoothLatency(_telemetry.value.latencyMs, raw) else null,
                         inputDb = inputDb,
                         floorDb = NativeEngine.nativeGetFloorDb(),
                         gateOpen = NativeEngine.nativeGetGateOpen(),
@@ -114,7 +116,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     peakDb = -90f
                     heardSpeech = false
-                    telemetry.value = Telemetry()
+                    _telemetry.value = Telemetry()
                     delay(250)
                 }
             }

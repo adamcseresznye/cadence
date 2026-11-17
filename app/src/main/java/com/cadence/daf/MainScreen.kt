@@ -110,13 +110,8 @@ fun MainScreen(viewModel: MainViewModel, openSettings: () -> Unit, openProgress:
             }
         }
         Box(Modifier.fillMaxWidth().staggerIn(1)) { NightStage(viewModel) }
-        Box(Modifier.fillMaxWidth().staggerIn(2)) { HeadsetNotices(state.headset, state.telemetry.quietMic, state.error) }
-        Box(Modifier.fillMaxWidth().staggerIn(3)) { ControlPanel(state.settings, actualDelay(
-            state.settings.delayMs,
-            state.telemetry.latencyMs,
-            state.headset.isBluetooth,
-            state.settings.pitchSemitones
-        ), viewModel) }
+        Box(Modifier.fillMaxWidth().staggerIn(2)) { HeadsetNotices(state.headset, viewModel, state.error) }
+        Box(Modifier.fillMaxWidth().staggerIn(3)) { ControlPanel(state.settings, state.headset.isBluetooth, viewModel) }
         PracticeRow(state.practice, state.settings.dailyGoalMin, openProgress, Modifier.staggerIn(4))
     }
 }
@@ -249,6 +244,7 @@ private fun NightStage(viewModel: MainViewModel) {
     val state by viewModel.uiState.collectAsState()
     val onStartStop = rememberStartStopAction(viewModel)
     val running = state.running
+    val telemetry by viewModel.telemetry.collectAsState()
     val colors = MaterialTheme.colorScheme
     val shortcutStart by startRequested.collectAsState()
     val canShortcutStart = state.headset.canStart && state.settings.disclaimerAccepted
@@ -259,15 +255,15 @@ private fun NightStage(viewModel: MainViewModel) {
         }
     }
     val level by animateFloatAsState(
-        if (running) levelFraction(state.telemetry.inputDb) else 0f,
+        if (running) levelFraction(telemetry.inputDb) else 0f,
         motionTween(80, LinearEasing),
         label = "level"
     )
     val levelName = stringResource(R.string.input_level)
-    val levelDb = stringResource(R.string.input_level_db, (state.telemetry.inputDb / 5).roundToInt() * 5)
+    val levelDb = stringResource(R.string.input_level_db, (telemetry.inputDb / 5).roundToInt() * 5)
     val gate = when {
         !state.settings.gateEnabled -> GateStatus.OFF
-        state.telemetry.gateOpen -> GateStatus.OPEN
+        telemetry.gateOpen -> GateStatus.OPEN
         else -> GateStatus.CLOSED
     }
     val statusRes = when {
@@ -363,7 +359,7 @@ private fun NightStage(viewModel: MainViewModel) {
         Text(stringResource(if (running) R.string.stop else R.string.start), style = MaterialTheme.typography.labelLarge)
         // Always laid out so Start does not push the rest of the screen down.
         Text(
-            formatElapsed(state.telemetry.elapsedSec),
+            formatElapsed(telemetry.elapsedSec),
             style = MaterialTheme.typography.bodyMedium,
             color = colors.onSurfaceVariant,
             modifier = Modifier
@@ -375,7 +371,8 @@ private fun NightStage(viewModel: MainViewModel) {
 
 /** Only the notices that apply; "plug in" already shows in the ring's status line. */
 @Composable
-private fun HeadsetNotices(headset: HeadsetState, quietMic: Boolean, error: String?) {
+private fun HeadsetNotices(headset: HeadsetState, viewModel: MainViewModel, error: String?) {
+    val quietMic = viewModel.telemetry.collectAsState().value.quietMic
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -396,16 +393,21 @@ private fun HeadsetNotices(headset: HeadsetState, quietMic: Boolean, error: Stri
     }
 }
 
+/** The "Actual delay" line. Reads the live latency itself, so only this line follows it. */
 @Composable
-private fun actualDelayLabel(actual: ActualDelay): String = when (actual) {
-    is ActualDelay.Measured -> stringResource(R.string.actual_delay, actual.ms)
-    ActualDelay.Bluetooth -> stringResource(R.string.actual_delay_bluetooth)
-    ActualDelay.NotMeasured -> stringResource(R.string.actual_delay_not_measured)
+private fun ActualDelayLine(settings: Settings, isBluetooth: Boolean, viewModel: MainViewModel) {
+    val latencyMs = viewModel.telemetry.collectAsState().value.latencyMs
+    val label = when (val actual = actualDelay(settings.delayMs, latencyMs, isBluetooth, settings.pitchSemitones)) {
+        is ActualDelay.Measured -> stringResource(R.string.actual_delay, actual.ms)
+        ActualDelay.Bluetooth -> stringResource(R.string.actual_delay_bluetooth)
+        ActualDelay.NotMeasured -> stringResource(R.string.actual_delay_not_measured)
+    }
+    Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-/** Delay, sensitivity, pitch and volume: one panel, collapsed by default. */
+/** Delay, volume, pitch and presets: one panel, collapsed by default. */
 @Composable
-private fun ControlPanel(settings: Settings, actual: ActualDelay, viewModel: MainViewModel) {
+private fun ControlPanel(settings: Settings, isBluetooth: Boolean, viewModel: MainViewModel) {
     var open by rememberSaveable { mutableStateOf(false) }
     val turn by animateFloatAsState(if (open) 180f else 0f, motionSpring(0.7f, 400f), label = "chevron")
     val delayLabel = stringResource(R.string.delay_label, settings.delayMs)
@@ -438,11 +440,7 @@ private fun ControlPanel(settings: Settings, actual: ActualDelay, viewModel: Mai
                     modifier = Modifier.semantics { contentDescription = delayLabel }
                 )
                 Caption(R.string.delay_caption)
-                Text(
-                    actualDelayLabel(actual),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                ActualDelayLine(settings, isBluetooth, viewModel)
                 VolumeSection(settings.outputGainDb, viewModel::setOutputGainDb)
                 PitchSection(settings.pitchSemitones, viewModel::setPitchSemitones)
                 PresetSection(settings.presets, viewModel)
