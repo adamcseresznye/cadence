@@ -86,6 +86,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 NativeEngine.nativeSetGateEnabled(settings.gateEnabled)
                 NativeEngine.nativeSetPitchSemitones(settings.pitchSemitones)
                 NativeEngine.nativeSetOutputGainDb(settings.outputGainDb)
+                NativeEngine.nativeSetMaskingDb(settings.engineMaskingDb)
             }
         }
         viewModelScope.launch {
@@ -148,6 +149,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /** The practice log as CSV text, for the share sheet. */
     suspend fun practiceCsv(): String = (listOf("date,seconds") + practiceLog.readLines()).joinToString("\n")
+
+    fun setMaskingEnabled(enabled: Boolean) {
+        viewModelScope.launch { repository.setMaskingEnabled(enabled) }
+    }
+
+    fun setMaskingDb(db: Int) {
+        viewModelScope.launch { repository.setMaskingDb(db) }
+    }
 
     fun setSessionLimitMin(min: Int) {
         viewModelScope.launch { repository.setSessionLimitMin(min) }

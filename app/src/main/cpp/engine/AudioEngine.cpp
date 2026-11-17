@@ -93,6 +93,7 @@ int AudioEngine::start(const EngineConfig& config) {
   pitch_.reset();
   limiter_.reset();
   leveler_.reset();
+  masking_.reset();
   appliedOutputGainDb_ = kMaxOutputGainDb + 1;
   muted_.store(false);
   sampleIndex_ = 0;
@@ -133,6 +134,10 @@ void AudioEngine::setOutputGainDb(int db) {
 
 void AudioEngine::setMuted(bool muted) {
   muted_.store(muted);
+}
+
+void AudioEngine::setMaskingDb(int db) {
+  maskingDb_.store(db);
 }
 
 void AudioEngine::stop() {
@@ -241,6 +246,11 @@ void AudioEngine::applySettings() {
     appliedOutputGainDb_ = gainDb;
     outputGain_ = std::pow(10.0f, static_cast<float>(gainDb) / 20.0f);
   }
+  const int maskingDb = maskingDb_.load();
+  if (maskingDb != appliedMaskingDb_) {
+    appliedMaskingDb_ = maskingDb;
+    masking_.setGainDb(maskingDb);
+  }
 }
 
 float AudioEngine::renderGated(const float* in, float* out, int32_t numFrames) {
@@ -252,7 +262,9 @@ float AudioEngine::renderGated(const float* in, float* out, int32_t numFrames) {
     const float delayed = delayLine_.process(in[i]);
     const int64_t playPos = sampleIndex_ - delay;
     gain = gateOn ? gate_.nextGain(playPos, timeline_) : 1.0f;
-    const float processed = limiter_.process(leveler_.process(pitch_.process(delayed)) * gain * outputGain_);
+    // The masking noise follows the gate, so it sounds only while the voice does.
+    const float voice = leveler_.process(pitch_.process(delayed)) * outputGain_;
+    const float processed = limiter_.process((voice + masking_.process()) * gain);
     out[i] = muted ? 0.0f : processed;
     ++sampleIndex_;
   }

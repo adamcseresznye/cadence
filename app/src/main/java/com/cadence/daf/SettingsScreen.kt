@@ -49,6 +49,7 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
 
         SectionCard { MicSection(state) { viewModel.setMicPreset(it) } }
         SectionCard { GateRow(state.settings.gateEnabled, viewModel::setGateEnabled) }
+        SectionCard { MaskingSection(state.settings, viewModel) }
         SectionCard { FadeSection(state.settings, viewModel) }
         SectionCard {
             Text(stringResource(R.string.session_limit), style = MaterialTheme.typography.titleMedium)
@@ -127,6 +128,31 @@ private fun GateRow(enabled: Boolean, onChange: (Boolean) -> Unit) {
     }
 }
 
+@Composable
+private fun MaskingSection(settings: Settings, viewModel: MainViewModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 56.dp)
+            .toggleable(value = settings.maskingEnabled, role = Role.Switch, onValueChange = viewModel::setMaskingEnabled),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(stringResource(R.string.masking_switch), modifier = Modifier.weight(1f))
+        Switch(checked = settings.maskingEnabled, onCheckedChange = null)
+    }
+    Caption(R.string.masking_caption)
+    val label = stringResource(R.string.masking_label, settings.maskingDb)
+    Text(label)
+    CadenceSlider(
+        value = settings.maskingDb.toFloat(),
+        onValueChange = { viewModel.setMaskingDb(it.roundToInt()) },
+        valueRange = -40f..-10f,
+        steps = 29,
+        enabled = settings.maskingEnabled,
+        modifier = Modifier.semantics { contentDescription = label }
+    )
+}
 
 @Composable
 private fun FadeSection(settings: Settings, viewModel: MainViewModel) {

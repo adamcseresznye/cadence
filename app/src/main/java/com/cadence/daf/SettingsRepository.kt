@@ -38,7 +38,17 @@ class SettingsRepository(context: Context) {
             reminderMinute = clampReminderMinute(prefs[REMINDER_MINUTE] ?: defaults.reminderMinute),
             sessionLimitMin = clampSessionLimitMin(prefs[SESSION_LIMIT_MIN] ?: defaults.sessionLimitMin),
             presets = PRESETS.map { parsePreset(prefs[it]) },
+            maskingEnabled = prefs[MASKING_ENABLED] ?: defaults.maskingEnabled,
+            maskingDb = clampMaskingDb(prefs[MASKING_DB] ?: defaults.maskingDb),
         )
+    }
+
+    suspend fun setMaskingEnabled(enabled: Boolean) {
+        store.edit { it[MASKING_ENABLED] = enabled }
+    }
+
+    suspend fun setMaskingDb(db: Int) {
+        store.edit { it[MASKING_DB] = clampMaskingDb(db) }
     }
 
     suspend fun setSessionLimitMin(min: Int) {
@@ -140,7 +150,9 @@ class SettingsRepository(context: Context) {
         val DAILY_GOAL_MIN = intPreferencesKey("daily_goal_min")
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
-        val SESSION_LIMIT_MIN = intPreferencesKey("session_limit_min")
+        val MASKING_ENABLED = booleanPreferencesKey("masking_enabled")
+        val MASKING_DB = intPreferencesKey("masking_db")
+        val SESSION_LIMIT_MIN =intPreferencesKey("session_limit_min")
         val PRESETS = List(PRESET_SLOTS) { stringPreferencesKey("preset_${it + 1}") }
     }
 }

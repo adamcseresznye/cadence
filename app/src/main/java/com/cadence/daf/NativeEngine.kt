@@ -15,6 +15,8 @@ object NativeEngine {
     external fun nativeSetPitchSemitones(semitones: Int)
     external fun nativeSetOutputGainDb(db: Int)
     external fun nativeSetMuted(muted: Boolean)
+    // Masking noise level -40..-10 dB; any lower value (MASKING_OFF_DB) turns it off.
+    external fun nativeSetMaskingDb(db: Int)
 
     // State codes: 0 Idle, 1 Running, 2 Error.
     external fun nativeGetState(): Int

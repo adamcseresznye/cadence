@@ -12,6 +12,7 @@
 #include "dsp/FrameAnalyzer.h"
 #include "dsp/FvadVad.h"
 #include "dsp/GateStage.h"
+#include "dsp/MaskingNoise.h"
 #include "dsp/OutputLimiter.h"
 #include "dsp/PitchShifter.h"
 #include "dsp/SpeechTimeline.h"
@@ -49,6 +50,7 @@ class AudioEngine {
   void setPitchSemitones(int semitones);
   void setOutputGainDb(int db);
   void setMuted(bool muted);
+  void setMaskingDb(int db);
   // Input + output latency reported by Oboe, or -1 when not running. Not for the callback.
   float latencyMs();
 
@@ -89,6 +91,8 @@ class AudioEngine {
   PitchShifter pitch_;
   OutputLimiter limiter_;
   VoiceLeveler leveler_;
+  MaskingNoise masking_;
+  int appliedMaskingDb_ = kMaskingOffDb;
   float outputGain_ = 1.0f;
   int64_t sampleIndex_ = 0;
   int appliedSensitivity_ = -1;
@@ -107,6 +111,7 @@ class AudioEngine {
   std::atomic<int> pitchSemitones_{kDefaultPitchSemitones};
   std::atomic<int> outputGainDb_{kDefaultOutputGainDb};
   std::atomic<bool> muted_{false};
+  std::atomic<int> maskingDb_{kMaskingOffDb};
   std::atomic<float> floorDb_{kNoiseFloorStartDb};
   std::atomic<bool> gateOpen_{false};
   std::atomic<bool> speechDetected_{false};

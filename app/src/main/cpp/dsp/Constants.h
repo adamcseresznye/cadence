@@ -32,5 +32,9 @@ constexpr float kVoiceTargetDb = -16.0f;        // speech level the leveler aims
 constexpr float kMaxVoiceBoostDb = 30.0f;
 constexpr float kSpeechLevelRate = 0.05f;       // per speech frame
 constexpr float kVoiceLevelerSmoothMs = 200.0f;
+constexpr int kMinMaskingDb = -40;
+constexpr int kMaxMaskingDb = -10;
+constexpr int kMaskingOffDb = -100;  // any value below kMinMaskingDb means off
+constexpr float kMaskingSmoothMs = 50.0f;
 
 }  // namespace cadence

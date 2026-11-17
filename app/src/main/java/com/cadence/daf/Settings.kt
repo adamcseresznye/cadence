@@ -17,7 +17,16 @@ data class Settings(
     val reminderMinute: Int = 18 * 60,
     val sessionLimitMin: Int = 0,
     val presets: List<Preset?> = List(PRESET_SLOTS) { null },
-)
+    val maskingEnabled: Boolean = false,
+    val maskingDb: Int = -25,
+) {
+    /** The value for nativeSetMaskingDb: the level, or MASKING_OFF_DB when masking is off. */
+    val engineMaskingDb: Int get() = if (maskingEnabled) maskingDb else MASKING_OFF_DB
+}
+
+const val MASKING_OFF_DB = -100
+
+fun clampMaskingDb(db: Int): Int = db.coerceIn(-40, -10)
 
 val SESSION_LIMIT_CHOICES = listOf(0, 5, 10, 15, 20, 30)
 

@@ -96,6 +96,9 @@
     <string name="reminder_channel">Practice reminders</string>
     <string name="reminder_title">Time to practise</string>
     <string name="reminder_text">A few minutes today keeps your practice going.</string>
+    <string name="masking_switch">Masking noise</string>
+    <string name="masking_caption">Adds a soft hiss while you speak, so you hear your own voice less. The noise is generated, not recorded. Keep it as low as works for you.</string>
+    <string name="masking_label">Noise volume: %1$d dB</string>
     <string name="shortcut_start">Start practice</string>
     <string name="export_history">Export practice history</string>
     <string name="session_limit">Stop automatically</string>
