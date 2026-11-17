@@ -28,7 +28,7 @@ data class UiState(
     val error: String?,
 
     val practice: PracticeStats = PracticeStats(0, 0, 0, 0, 0, 0),
-    val last30Days: List<DayTotal> = emptyList(),
+    val dayMinutes: Map<LocalDate, Int> = emptyMap(),
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -38,7 +38,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     /** Live values, 10 per second while running. Kept out of uiState so only the parts that show them recompose. */
     val telemetry: StateFlow<Telemetry> = _telemetry
     private val practiceLog = PracticeLogStore(application)
-    private val practice = MutableStateFlow(PracticeStats(0, 0, 0, 0, 0, 0) to emptyList<DayTotal>())
+    private val practice = MutableStateFlow(PracticeStats(0, 0, 0, 0, 0, 0) to emptyMap<LocalDate, Int>())
     private val sessionEvents = Channel<Int>(Channel.BUFFERED)
 
     /** Minutes practised today, once per logged session; the screen shows the Snackbar. */
@@ -126,7 +126,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun refreshPractice() {
         val lines = practiceLog.readLines()
         val today = LocalDate.now()
-        practice.value = practiceStats(lines, today) to dailyMinutes(lines, today, 30)
+        practice.value = practiceStats(lines, today) to minutesByDay(lines, today)
     }
 
     private val _calibrating = MutableStateFlow(false)

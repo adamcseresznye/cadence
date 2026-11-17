@@ -43,14 +43,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
@@ -85,27 +92,13 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             Text(stringResource(R.string.progress_title), style = MaterialTheme.typography.headlineMedium)
         }
         SectionCard {
-            DayChart(state.last30Days, goal, stats.monthMin, stats.monthDays)
-            val weekDays = pluralStringResource(R.plurals.days_count, stats.weekDays, stats.weekDays)
-            val monthDays = pluralStringResource(R.plurals.days_count, stats.monthDays, stats.monthDays)
-            val allHours = stats.allTimeMin >= 60
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatTile(
-                    Modifier.weight(1f), stringResource(R.string.stat_week), stats.weekMin.toString(),
-                    stringResource(R.string.stat_unit_min_days, weekDays),
-                    stringResource(R.string.progress_week, stats.weekMin, weekDays)
-                )
-                StatTile(
-                    Modifier.weight(1f), stringResource(R.string.stat_month), stats.monthMin.toString(),
-                    stringResource(R.string.stat_unit_min_days, monthDays),
-                    stringResource(R.string.progress_month, stats.monthMin)
-                )
-                StatTile(
-                    Modifier.weight(1f), stringResource(R.string.stat_all_time),
-                    if (allHours) (stats.allTimeMin / 60).toString() else stats.allTimeMin.toString(),
-                    if (allHours) stringResource(R.string.stat_unit_hours, stats.allTimeMin % 60) else stringResource(R.string.stat_unit_min),
-                    stringResource(R.string.progress_all_time, stats.allTimeMin / 60, stats.allTimeMin % 60)
-                )
+            DayChart(state.dayMinutes, goal)
+        }
+        SectionCard {
+            Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatTile(Modifier.weight(1f), stringResource(R.string.stat_week), stats.weekMin, stringResource(R.string.stat_days_of, stats.weekDays, 7))
+                StatTile(Modifier.weight(1f), stringResource(R.string.stat_month), stats.monthMin, stringResource(R.string.stat_days_of, stats.monthDays, 30))
+                StatTile(Modifier.weight(1f), stringResource(R.string.stat_all_time), stats.allTimeMin, stringResource(R.string.stat_in_total))
             }
         }
         SectionCard {
@@ -142,21 +135,23 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     }
 }
 
-/** One number with its unit and period. The spoken label is the full sentence, so the pieces are merged. */
+/** Reads top to bottom as a sentence: "Last 7 days / 60 / minutes / on 4 of 7 days". */
 @Composable
-private fun StatTile(modifier: Modifier, label: String, value: String, unit: String, spoken: String) {
+private fun StatTile(modifier: Modifier, label: String, minutes: Int, detail: String) {
     val colors = MaterialTheme.colorScheme
     Column(
         modifier = modifier
+            .fillMaxHeight()
             .clip(MaterialTheme.shapes.medium)
             .background(colors.surfaceContainerHigh)
-            .padding(horizontal = 8.dp, vertical = 12.dp)
-            .semantics(mergeDescendants = true) { contentDescription = spoken },
+            .padding(horizontal = 6.dp, vertical = 12.dp)
+            .semantics(mergeDescendants = true) {},
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(value, style = MaterialTheme.typography.headlineSmall, color = colors.primary, maxLines = 1)
-        Text(unit, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, textAlign = TextAlign.Center)
-        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(minutes.toString(), style = MaterialTheme.typography.headlineSmall, color = colors.primary, maxLines = 1, modifier = Modifier.padding(top = 6.dp))
+        Text(pluralStringResource(R.plurals.stat_unit_minutes, minutes), style = MaterialTheme.typography.bodySmall)
+        Text(detail, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
     }
 }
 
@@ -193,18 +188,38 @@ internal fun heatmapRows(days: List<DayTotal>): List<List<DayTotal?>> {
 
 private val dayFormat = DateTimeFormatter.ofPattern("EEE d MMM")
 
-/** Calendar heatmap of the last 30 days. Tap a day for its date and minutes. */
+private val monthFormat = DateTimeFormatter.ofPattern("LLLL yyyy")
+
+/** One month at a time, with arrows back to the first logged month. Tap a day for its date and minutes. */
 @Composable
-private fun DayChart(days: List<DayTotal>, goal: Int, monthMin: Int, monthDays: Int) {
+private fun DayChart(dayMinutes: Map<LocalDate, Int>, goal: Int) {
     val colors = MaterialTheme.colorScheme
+    val today = LocalDate.now()
+    val thisMonth = YearMonth.from(today)
+    val firstMonth = remember(dayMinutes) { dayMinutes.keys.minOrNull()?.let { YearMonth.from(it) } ?: thisMonth }
+    var monthText by rememberSaveable { mutableStateOf(thisMonth.toString()) }
+    val month = YearMonth.parse(monthText)
+    val days = remember(dayMinutes, month) { monthDays(dayMinutes, month, today) }
+    val monthMin = days.sumOf { it.minutes }
+    val monthTitle = month.format(monthFormat)
     val description = stringResource(
         R.string.chart_description,
+        monthTitle,
         pluralStringResource(R.plurals.minutes_count, monthMin, monthMin),
-        pluralStringResource(R.plurals.days_count, monthDays, monthDays)
+        pluralStringResource(R.plurals.days_count, days.count { it.minutes > 0 }, days.count { it.minutes > 0 })
     )
     val rows = remember(days) { heatmapRows(days) }
-    var selected by remember { mutableStateOf<LocalDate?>(null) }
+    var selected by remember(month) { mutableStateOf<LocalDate?>(null) }
     val picked = days.firstOrNull { it.date == selected }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = { monthText = month.minusMonths(1).toString() }, enabled = month > firstMonth) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.previous_month))
+        }
+        Text(monthTitle, style = MaterialTheme.typography.titleMedium)
+        IconButton(onClick = { monthText = month.plusMonths(1).toString() }, enabled = month < thisMonth) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.next_month))
+        }
+    }
     // Monday first, like the grid; letters follow the phone's language.
     Row(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
         DayOfWeek.values().forEach { d ->

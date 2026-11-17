@@ -1,6 +1,7 @@
 package com.cadence.daf
 
 import java.time.LocalDate
+import java.time.YearMonth
 
 data class DayTotal(val date: LocalDate, val minutes: Int)
 
@@ -28,14 +29,13 @@ private fun secondsByDay(lines: List<String>, today: LocalDate): Map<LocalDate, 
 private fun Map<LocalDate, Long>.lastDays(today: LocalDate, days: Int): List<Long> =
     (days - 1 downTo 0).map { this[today.minusDays(it.toLong())] ?: 0L }
 
-/** Minutes per day, oldest first, exactly [days] entries ending today. */
-fun dailyMinutes(lines: List<String>, today: LocalDate, days: Int): List<DayTotal> {
-    val sums = secondsByDay(lines, today)
-    return (days - 1 downTo 0).map { back ->
-        val date = today.minusDays(back.toLong())
-        DayTotal(date, ((sums[date] ?: 0L) / 60).toInt())
-    }
-}
+/** Minutes for every day that has a log entry. */
+fun minutesByDay(lines: List<String>, today: LocalDate): Map<LocalDate, Int> =
+    secondsByDay(lines, today).mapValues { (it.value / 60).toInt() }
+
+/** Every day of [month] up to today, oldest first. */
+fun monthDays(minutes: Map<LocalDate, Int>, month: YearMonth, today: LocalDate): List<DayTotal> =
+    (1..month.lengthOfMonth()).map { month.atDay(it) }.filter { !it.isAfter(today) }.map { DayTotal(it, minutes[it] ?: 0) }
 
 fun practiceStats(lines: List<String>, today: LocalDate): PracticeStats {
     val sums = secondsByDay(lines, today)
