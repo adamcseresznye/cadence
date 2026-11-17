@@ -15,6 +15,7 @@
 #include "dsp/MaskingNoise.h"
 #include "dsp/OutputLimiter.h"
 #include "dsp/PitchShifter.h"
+#include "dsp/SpeechFilter.h"
 #include "dsp/SpeechTimeline.h"
 #include "dsp/VoiceLeveler.h"
 
@@ -92,6 +93,7 @@ class AudioEngine {
   OutputLimiter limiter_;
   VoiceLeveler leveler_;
   MaskingNoise masking_;
+  SpeechFilter speechFilter_;
   int appliedMaskingDb_ = kMaskingOffDb;
   float outputGain_ = 1.0f;
   int64_t sampleIndex_ = 0;
