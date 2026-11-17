@@ -30,6 +30,7 @@ class Denoiser {
     create();
     in_.fill(0.0f);
     dry_.fill(0.0f);
+    older_.fill(0.0f);
     out_.fill(0.0f);
     pos_ = 0;
     wet_ = 0.0f;
@@ -58,7 +59,7 @@ class Denoiser {
     rnnoise_process_frame(state_, silence.data(), silence.data());
   }
 
-  // out_ = the previous input frame (dry), crossfaded over one frame to or from its denoised version.
+  // out_ = the input frame from two frames ago (dry), crossfaded over one frame to or from its denoised version.
   void processFrame() {
     const float target = enabled_ && state_ ? 1.0f : 0.0f;
     const bool run = wet_ > 0.0f || target > 0.0f;
@@ -68,16 +69,18 @@ class Denoiser {
     }
     for (int i = 0; i < kVadFrameSamples; ++i) {
       const float mix = wet_ + (target - wet_) * static_cast<float>(i + 1) / kVadFrameSamples;
-      const float clean = run ? scaled_[i] / kPcmScale : dry_[i];
-      out_[i] = dry_[i] + mix * (clean - dry_[i]);
+      const float clean = run ? scaled_[i] / kPcmScale : older_[i];
+      out_[i] = older_[i] + mix * (clean - older_[i]);
     }
     wet_ = target;
+    older_ = dry_;
     dry_ = in_;
   }
 
   DenoiseState* state_ = nullptr;
   std::array<float, kVadFrameSamples> in_{};
-  std::array<float, kVadFrameSamples> dry_{};
+  std::array<float, kVadFrameSamples> dry_{};    // previous input frame
+  std::array<float, kVadFrameSamples> older_{};  // the frame before that: what RNNoise outputs now
   std::array<float, kVadFrameSamples> out_{};
   std::array<float, kVadFrameSamples> scaled_{};
   int pos_ = 0;
