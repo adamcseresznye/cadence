@@ -45,11 +45,25 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -92,14 +106,21 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             Text(stringResource(R.string.progress_title), style = MaterialTheme.typography.headlineMedium)
         }
         SectionCard {
+            Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.stat_all_time), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    if (stats.allTimeMin < 60) stringResource(R.string.duration_min, stats.allTimeMin)
+                    else stringResource(R.string.duration_h_min, stats.allTimeMin / 60, stats.allTimeMin % 60),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        SectionCard {
             DayChart(state.dayMinutes, goal)
         }
         SectionCard {
-            Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatTile(Modifier.weight(1f), stringResource(R.string.stat_week), stats.weekMin, stringResource(R.string.stat_days_of, stats.weekDays, 7))
-                StatTile(Modifier.weight(1f), stringResource(R.string.stat_month), stats.monthMin, stringResource(R.string.stat_days_of, stats.monthDays, 30))
-                StatTile(Modifier.weight(1f), stringResource(R.string.stat_all_time), stats.allTimeMin, stringResource(R.string.stat_in_total))
-            }
+            TrendChart(state.dayMinutes, goal)
         }
         SectionCard {
             Text(stringResource(R.string.daily_goal), style = MaterialTheme.typography.titleMedium)
@@ -135,23 +156,156 @@ fun ProgressScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     }
 }
 
-/** Reads top to bottom as a sentence: "Last 7 days / 60 / minutes / on 4 of 7 days". */
+private val shortDate = DateTimeFormatter.ofPattern("d MMM")
+private val CHART_HEIGHT = 140.dp
+private val Y_LABEL_WIDTH = 32.dp
+
+/** Minutes per day as a line: 7 or 30 days, with arrows to step back in time. */
 @Composable
-private fun StatTile(modifier: Modifier, label: String, minutes: Int, detail: String) {
+private fun TrendChart(dayMinutes: Map<LocalDate, Int>, goal: Int) {
     val colors = MaterialTheme.colorScheme
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(MaterialTheme.shapes.medium)
-            .background(colors.surfaceContainerHigh)
-            .padding(horizontal = 6.dp, vertical = 12.dp)
-            .semantics(mergeDescendants = true) {},
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, textAlign = TextAlign.Center)
-        Text(minutes.toString(), style = MaterialTheme.typography.headlineSmall, color = colors.primary, maxLines = 1, modifier = Modifier.padding(top = 6.dp))
-        Text(pluralStringResource(R.plurals.stat_unit_minutes, minutes), style = MaterialTheme.typography.bodySmall)
-        Text(detail, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+    val today = LocalDate.now()
+    var range by rememberSaveable { mutableStateOf(7) }
+    var offset by rememberSaveable { mutableStateOf(0) }
+    val first = remember(dayMinutes) { dayMinutes.keys.minOrNull() ?: today }
+    val end = today.minusDays((offset * range).toLong())
+    val days = remember(dayMinutes, end, range) {
+        (range - 1 downTo 0).map { back -> end.minusDays(back.toLong()).let { DayTotal(it, dayMinutes[it] ?: 0) } }
+    }
+    val total = days.sumOf { it.minutes }
+    val practised = days.count { it.minutes > 0 }
+    val period = "${days.first().date.format(shortDate)} – ${end.format(shortDate)}"
+    val detail = stringResource(
+        R.string.trend_detail,
+        pluralStringResource(R.plurals.minutes_count, total, total),
+        pluralStringResource(R.plurals.days_count, practised, practised)
+    )
+    var selected by remember(days) { mutableStateOf<Int?>(null) }
+    var plotWidth by remember { mutableStateOf(0) }
+    val picked = selected?.let { days[it] }
+    val shownDetail = if (picked == null) detail else
+        "${picked.date.format(dayFormat)} · ${pluralStringResource(R.plurals.minutes_count, picked.minutes, picked.minutes)}"
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(7 to R.string.range_7, 30 to R.string.range_30).forEach { (r, label) ->
+            val selected = range == r
+            FilterChip(
+                selected = selected,
+                onClick = { range = r; offset = 0 },
+                label = { Text(stringResource(label)) },
+                border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outline)
+            )
+        }
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = { offset++ }, enabled = end.minusDays(range.toLong()) >= first) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.previous_period))
+        }
+        Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}, horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(period, style = MaterialTheme.typography.titleMedium)
+            Text(shownDetail, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+        }
+        IconButton(onClick = { offset-- }, enabled = offset > 0) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.next_period))
+        }
+    }
+    val top = ((maxOf(days.maxOf { it.minutes }, goal, 5) + 4) / 5) * 5
+    Row(Modifier.height(CHART_HEIGHT)) {
+        Column(Modifier.width(Y_LABEL_WIDTH).fillMaxHeight().clearAndSetSemantics {}, verticalArrangement = Arrangement.SpaceBetween) {
+            Text(top.toString(), Modifier.fillMaxWidth(), style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, textAlign = TextAlign.End)
+            Text("0", Modifier.fillMaxWidth(), style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, textAlign = TextAlign.End)
+        }
+        Box(Modifier.weight(1f).fillMaxHeight().onSizeChanged { plotWidth = it.width }) {
+        Canvas(
+            Modifier
+                .fillMaxSize()
+                .semantics { contentDescription = "$period: $detail" }
+                // Tap a day, or drag along the line, to read its minutes.
+                .pointerInput(days) {
+                    detectTapGestures { selected = (it.x / size.width * days.size).toInt().coerceIn(0, days.size - 1) }
+                }
+                .pointerInput(days) {
+                    detectHorizontalDragGestures { change, _ ->
+                        selected = (change.position.x / size.width * days.size).toInt().coerceIn(0, days.size - 1)
+                    }
+                }
+        ) {
+            // 8 dp top and bottom so the y labels (16 dp tall) centre on the first and last gridline.
+            val pad = 8.dp.toPx()
+            val plotH = size.height - 2 * pad
+            fun y(v: Int) = pad + plotH * (1f - v.toFloat() / top)
+            fun x(i: Int) = size.width * (i + 0.5f) / days.size
+            listOf(0, top / 2, top).forEach {
+                drawLine(colors.outlineVariant, Offset(0f, y(it)), Offset(size.width, y(it)), 1.dp.toPx())
+            }
+            if (goal in 1..top) {
+                drawLine(
+                    colors.primary.copy(alpha = 0.5f), Offset(0f, y(goal)), Offset(size.width, y(goal)), 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx()))
+                )
+            }
+            val line = Path().apply {
+                days.forEachIndexed { i, d -> if (i == 0) moveTo(x(i), y(d.minutes)) else lineTo(x(i), y(d.minutes)) }
+            }
+            val area = Path().apply {
+                addPath(line)
+                lineTo(x(days.size - 1), y(0))
+                lineTo(x(0), y(0))
+                close()
+            }
+            drawPath(area, Brush.verticalGradient(listOf(colors.primary.copy(alpha = 0.30f), Color.Transparent), startY = pad, endY = pad + plotH))
+            drawPath(line, colors.primary, style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+            days.forEachIndexed { i, d ->
+                if (days.size <= 7 || d.minutes > 0) drawCircle(colors.primary, if (days.size <= 7) 4.dp.toPx() else 2.5.dp.toPx(), Offset(x(i), y(d.minutes)))
+            }
+            selected?.let { i ->
+                drawLine(colors.onSurfaceVariant.copy(alpha = 0.4f), Offset(x(i), pad), Offset(x(i), pad + plotH), 1.dp.toPx())
+                drawCircle(colors.primary.copy(alpha = 0.3f), 9.dp.toPx(), Offset(x(i), y(days[i].minutes)))
+                drawCircle(colors.primary, 5.dp.toPx(), Offset(x(i), y(days[i].minutes)))
+            }
+        }
+        if (picked != null && plotWidth > 0) {
+            val density = LocalDensity.current
+            val i = selected ?: 0
+            val tipWidth = 56.dp
+            val px = with(density) { (plotWidth * (i + 0.5f) / days.size).toDp() }
+            val py = 8.dp + (CHART_HEIGHT - 16.dp) * (1f - picked.minutes.toFloat() / top)
+            Text(
+                stringResource(R.string.duration_min, picked.minutes),
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.inverseOnSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .offset(
+                        x = (px - tipWidth / 2).coerceIn(0.dp, with(density) { plotWidth.toDp() } - tipWidth),
+                        y = if (py > 36.dp) py - 34.dp else py + 12.dp
+                    )
+                    .width(tipWidth)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(colors.inverseSurface)
+                    .padding(vertical = 3.dp)
+            )
+        }
+        }
+    }
+    // Same width as the canvas, so each label sits under its point.
+    Row(Modifier.fillMaxWidth().padding(start = Y_LABEL_WIDTH).clearAndSetSemantics {}) {
+        if (days.size <= 7) {
+            days.forEach { d ->
+                Text(
+                    d.date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+                    Modifier.weight(1f), textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant
+                )
+            }
+        } else {
+            listOf(days.first(), days[days.size / 2], days.last()).forEachIndexed { i, d ->
+                Text(
+                    d.date.format(shortDate), Modifier.weight(1f),
+                    textAlign = when (i) { 0 -> TextAlign.Start; 1 -> TextAlign.Center; else -> TextAlign.End },
+                    style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 

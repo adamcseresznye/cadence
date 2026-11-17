@@ -70,15 +70,14 @@
         <item quantity="other">%1$d days</item>
     </plurals>
     <string name="chart_description">%1$s: %2$s on %3$s</string>
-    <string name="stat_week">Last 7 days</string>
-    <string name="stat_month">Last 30 days</string>
     <string name="stat_all_time">All time</string>
-    <string name="stat_days_of">on %1$d of %2$d days</string>
-    <string name="stat_in_total">in total</string>
-    <plurals name="stat_unit_minutes">
-        <item quantity="one">minute</item>
-        <item quantity="other">minutes</item>
-    </plurals>
+    <string name="duration_min">%1$d min</string>
+    <string name="duration_h_min">%1$d h %2$d min</string>
+    <string name="range_7">7 days</string>
+    <string name="range_30">30 days</string>
+    <string name="trend_detail">%1$s on %2$s</string>
+    <string name="previous_period">Earlier</string>
+    <string name="next_period">Later</string>
     <string name="previous_month">Previous month</string>
     <string name="next_month">Next month</string>
     <string name="daily_goal">Daily goal</string>
