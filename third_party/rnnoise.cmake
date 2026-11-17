@@ -4,7 +4,8 @@ file(GLOB RNNOISE_SOURCES CONFIGURE_DEPENDS "${RNNOISE_DIR}/src/*.c")
 add_library(rnnoise STATIC ${RNNOISE_SOURCES})
 set_target_properties(rnnoise PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # _USE_MATH_DEFINES: M_PI on Windows compilers (desktop tests).
-target_compile_definitions(rnnoise PRIVATE RNNOISE_BUILD _USE_MATH_DEFINES)
+# DISABLE_DEBUG_FLOAT: use the 8-bit weights. Without it RNNoise picks its float copies, about 10 times slower on a phone and 4 times larger.
+target_compile_definitions(rnnoise PRIVATE RNNOISE_BUILD _USE_MATH_DEFINES DISABLE_DEBUG_FLOAT)
 target_include_directories(rnnoise
     PUBLIC "${RNNOISE_DIR}/include"
     PRIVATE "${RNNOISE_DIR}/src")
