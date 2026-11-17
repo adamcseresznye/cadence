@@ -79,6 +79,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -157,6 +158,7 @@ private fun PracticeRow(stats: PracticeStats, goal: Int, onClick: () -> Unit, mo
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 48.dp)
+            .clip(MaterialTheme.shapes.small)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = label },
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
@@ -256,7 +258,8 @@ private fun NightStage(viewModel: MainViewModel) {
     }
     val level by animateFloatAsState(
         if (running) levelFraction(telemetry.inputDb) else 0f,
-        motionTween(80, LinearEasing),
+        // Same length as the 10 Hz telemetry interval, so the halo glides between samples.
+        motionTween(100, LinearEasing),
         label = "level"
     )
     val levelName = stringResource(R.string.input_level)
@@ -281,7 +284,8 @@ private fun NightStage(viewModel: MainViewModel) {
     val view = LocalView.current
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    val press by animateFloatAsState(if (pressed) 0.96f else 1f, motionSpring(0.55f, 500f), label = "press")
+    val press by animateFloatAsState(if (pressed) 0.96f else 1f, motionSpring(1f, 500f), label = "press")
+    val timerAlpha by animateFloatAsState(if (running) 1f else 0f, motionTween(200), label = "timer")
     Column(
         Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -289,7 +293,7 @@ private fun NightStage(viewModel: MainViewModel) {
     ) {
         Box(
             Modifier
-                .size(260.dp)
+                .size(300.dp)
                 .drawBehind {
                     val radius = size.minDimension / 2
                     val ringRadius = radius - 18.dp.toPx()
@@ -314,7 +318,8 @@ private fun NightStage(viewModel: MainViewModel) {
                 },
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // 44 dp each side keeps the longest status line inside the ring (it wraps to two lines).
+            Column(Modifier.padding(horizontal = 44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     stringResource(R.string.set_delay_title).uppercase(),
                     style = MaterialTheme.typography.labelLarge,
@@ -328,6 +333,7 @@ private fun NightStage(viewModel: MainViewModel) {
                     stringResource(statusRes),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                     // Gate flips on every phrase; announcing it would talk over practice.
                     modifier = Modifier.semantics { if (!running) liveRegion = LiveRegionMode.Polite }
                 )
@@ -363,7 +369,7 @@ private fun NightStage(viewModel: MainViewModel) {
             style = MaterialTheme.typography.bodyMedium,
             color = colors.onSurfaceVariant,
             modifier = Modifier
-                .graphicsLayer { alpha = if (running) 1f else 0f }
+                .graphicsLayer { alpha = timerAlpha }
                 .then(if (running) Modifier else Modifier.clearAndSetSemantics {})
         )
     }
@@ -409,7 +415,7 @@ private fun ActualDelayLine(settings: Settings, isBluetooth: Boolean, viewModel:
 @Composable
 private fun ControlPanel(settings: Settings, isBluetooth: Boolean, viewModel: MainViewModel) {
     var open by rememberSaveable { mutableStateOf(false) }
-    val turn by animateFloatAsState(if (open) 180f else 0f, motionSpring(0.7f, 400f), label = "chevron")
+    val turn by animateFloatAsState(if (open) 180f else 0f, motionSpring(1f), label = "chevron")
     val delayLabel = stringResource(R.string.delay_label, settings.delayMs)
     val openState = stringResource(if (open) R.string.expanded else R.string.collapsed)
     SectionCard {
@@ -417,6 +423,7 @@ private fun ControlPanel(settings: Settings, isBluetooth: Boolean, viewModel: Ma
             modifier = Modifier
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = 48.dp)
+                .clip(MaterialTheme.shapes.small)
                 .clickable(role = Role.Button) { open = !open }
                 .semantics { stateDescription = openState },
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -431,6 +438,7 @@ private fun ControlPanel(settings: Settings, isBluetooth: Boolean, viewModel: Ma
             exit = shrinkVertically(motionSpring(1f)) + fadeOut(motionTween(150))
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(delayLabel, style = MaterialTheme.typography.titleMedium)
                 CadenceSlider(
                     value = settings.delayMs.toFloat(),
                     onValueChange = { viewModel.setDelayMs(it.roundToInt()) },

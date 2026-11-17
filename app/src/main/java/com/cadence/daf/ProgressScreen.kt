@@ -56,7 +56,7 @@ internal fun goalReached(todayMin: Int, goalMin: Int) = goalMin > 0 && todayMin 
 internal fun rememberGrow(target: Float, animateOpen: Boolean = true): Float {
     var opened by remember { mutableStateOf(!animateOpen) }
     LaunchedEffect(Unit) { opened = true }
-    val grown by animateFloatAsState(if (opened) target else 0f, motionTween(420), label = "grow")
+    val grown by animateFloatAsState(if (opened) target else 0f, motionTween(300), label = "grow")
     return grown
 }
 
@@ -163,7 +163,6 @@ private fun DayChart(days: List<DayTotal>, goal: Int, monthMin: Int, monthDays: 
         pluralStringResource(R.plurals.minutes_count, monthMin, monthMin),
         pluralStringResource(R.plurals.days_count, monthDays, monthDays)
     )
-    val grow = rememberGrow(1f)
     val rows = remember(days) { heatmapRows(days) }
     var selected by remember { mutableStateOf<LocalDate?>(null) }
     val picked = days.firstOrNull { it.date == selected }
@@ -193,8 +192,8 @@ private fun DayChart(days: List<DayTotal>, goal: Int, monthMin: Int, monthDays: 
                     atGoal -> colors.primary
                     else -> colors.primaryContainer
                 }
-                drawRoundRect(fill, topLeft, box, corner, alpha = grow)
-                if (day.minutes > 0 && !atGoal) drawRoundRect(colors.primary, topLeft, box, corner, Stroke(1.dp.toPx()), alpha = grow)
+                drawRoundRect(fill, topLeft, box, corner)
+                if (day.minutes > 0 && !atGoal) drawRoundRect(colors.primary, topLeft, box, corner, Stroke(1.dp.toPx()))
                 if (day.date == selected) drawRoundRect(colors.onSurface, topLeft, box, corner, Stroke(2.dp.toPx()))
             }
         }
