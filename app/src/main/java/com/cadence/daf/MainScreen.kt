@@ -48,6 +48,18 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.foundation.background
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -452,44 +464,82 @@ private fun ControlPanel(settings: Settings, isBluetooth: Boolean, viewModel: Ma
                 ActualDelayLine(settings, isBluetooth, viewModel)
                 VolumeSection(settings.outputGainDb, viewModel::setOutputGainDb)
                 PitchSection(settings.pitchSemitones, viewModel::setPitchSemitones)
-                PresetSection(settings.presets, viewModel)
+                PresetSection(settings.presets, settings.presetNames, viewModel)
             }
         }
     }
 }
 
-/** Three slots: Use applies a saved set, Save stores the current delay, sensitivity, pitch and volume. */
+/** Saved presets as tiles (tap = use); nothing shows until the user saves one. Edit renames or deletes. */
 @Composable
-private fun PresetSection(presets: List<Preset?>, viewModel: MainViewModel) {
+private fun PresetSection(presets: List<Preset?>, names: List<String>, viewModel: MainViewModel) {
+    var editing by rememberSaveable { mutableStateOf<Int?>(null) }
     Text(stringResource(R.string.presets_title), style = MaterialTheme.typography.titleMedium)
     presets.forEachIndexed { slot, preset ->
-        val number = slot + 1
-        val useLabel = stringResource(R.string.preset_use_label, number)
-        val saveLabel = stringResource(R.string.preset_save_label, number)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                if (preset == null) {
-                    stringResource(R.string.preset_empty, number)
-                } else {
-                    stringResource(
-                        R.string.preset_label, number, preset.delayMs, preset.sensitivity, preset.pitchSemitones, preset.outputGainDb
+        AnimatedVisibility(
+            visible = preset != null,
+            enter = expandVertically(motionSpring(1f)) + fadeIn(motionTween(200)),
+            exit = shrinkVertically(motionSpring(1f)) + fadeOut(motionTween(150))
+        ) {
+            if (preset == null) return@AnimatedVisibility
+            val title = names[slot].ifBlank { stringResource(R.string.preset_name_hint, slot + 1) }
+            val useLabel = stringResource(R.string.preset_use_label, title)
+            Row(
+                Modifier
+                    .padding(bottom = 8.dp)
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable(role = Role.Button, onClickLabel = useLabel) { viewModel.applyPreset(slot) }
+                    .padding(start = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(R.string.preset_label, preset.delayMs, preset.sensitivity, preset.pitchSemitones, preset.outputGainDb),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.weight(1f)
-            )
-            TextButton(
-                onClick = { viewModel.applyPreset(slot) },
-                enabled = preset != null,
-                modifier = Modifier.semantics { contentDescription = useLabel }
-            ) { Text(stringResource(R.string.preset_use)) }
-            TextButton(
-                onClick = { viewModel.savePreset(slot) },
-                modifier = Modifier.semantics { contentDescription = saveLabel }
-            ) { Text(stringResource(R.string.preset_save)) }
+                }
+                IconButton(onClick = { editing = slot }) {
+                    Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.preset_edit_label, title))
+                }
+            }
         }
     }
-    Caption(R.string.presets_caption)
+    val free = presets.indexOfFirst { it == null }
+    if (free >= 0) {
+        OutlinedButton(onClick = { viewModel.savePreset(free) }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.preset_add))
+        }
+        Caption(R.string.presets_caption)
+    } else {
+        Caption(R.string.presets_full)
+    }
+    editing?.let { slot ->
+        var name by remember(slot) { mutableStateOf(names[slot]) }
+        AlertDialog(
+            onDismissRequest = { editing = null },
+            title = { Text(stringResource(R.string.preset_dialog_title)) },
+            text = {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = clampPresetName(it) },
+                    placeholder = { Text(stringResource(R.string.preset_name_hint, slot + 1)) },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.setPresetName(slot, name); editing = null }) { Text(stringResource(R.string.preset_done)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.deletePreset(slot); editing = null }) { Text(stringResource(R.string.delete)) }
+            }
+        )
+    }
 }
 
 @Composable

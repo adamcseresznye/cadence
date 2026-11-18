@@ -32,12 +32,16 @@ class SettingsRepository(context: Context) {
             fadeStartMs = clampFadeStartMs(prefs[FADE_START_MS] ?: defaults.fadeStartMs),
             fadeStepMs = clampFadeStepMs(prefs[FADE_STEP_MS] ?: defaults.fadeStepMs),
             fadeStartDay = prefs[FADE_START_DAY] ?: defaults.fadeStartDay,
+            fadeTargetMs = clampFadeTargetMs(prefs[FADE_TARGET_MS] ?: defaults.fadeTargetMs),
+            fadeIntervalDays = clampFadeIntervalDays(prefs[FADE_INTERVAL_DAYS] ?: defaults.fadeIntervalDays),
+            fadePauseDay = prefs[FADE_PAUSE_DAY] ?: defaults.fadePauseDay,
             disclaimerAccepted = prefs[DISCLAIMER_ACCEPTED] ?: defaults.disclaimerAccepted,
             dailyGoalMin = clampDailyGoalMin(prefs[DAILY_GOAL_MIN] ?: defaults.dailyGoalMin),
             reminderEnabled = prefs[REMINDER_ENABLED] ?: defaults.reminderEnabled,
             reminderMinute = clampReminderMinute(prefs[REMINDER_MINUTE] ?: defaults.reminderMinute),
             sessionLimitMin = clampSessionLimitMin(prefs[SESSION_LIMIT_MIN] ?: defaults.sessionLimitMin),
             presets = PRESETS.map { parsePreset(prefs[it]) },
+            presetNames = PRESET_NAMES.map { prefs[it] ?: "" },
             maskingEnabled = prefs[MASKING_ENABLED] ?: defaults.maskingEnabled,
             maskingDb = clampMaskingDb(prefs[MASKING_DB] ?: defaults.maskingDb),
             noiseReduction = prefs[NOISE_REDUCTION] ?: defaults.noiseReduction,
@@ -106,6 +110,7 @@ class SettingsRepository(context: Context) {
         store.edit {
             it[FADE_ENABLED] = enabled
             if (enabled) it[FADE_START_DAY] = LocalDate.now().toEpochDay()
+            it.remove(FADE_PAUSE_DAY)
         }
     }
 
@@ -115,6 +120,47 @@ class SettingsRepository(context: Context) {
 
     suspend fun setFadeStepMs(ms: Int) {
         store.edit { it[FADE_STEP_MS] = clampFadeStepMs(ms) }
+    }
+
+    suspend fun setFadeTargetMs(ms: Int) {
+        store.edit { it[FADE_TARGET_MS] = clampFadeTargetMs(ms) }
+    }
+
+    suspend fun setFadeIntervalDays(days: Int) {
+        store.edit { it[FADE_INTERVAL_DAYS] = clampFadeIntervalDays(days) }
+    }
+
+    /** Pausing freezes the program on today's delay; resuming moves the start day forward by the days paused. */
+    suspend fun setFadePaused(paused: Boolean) {
+        val today = LocalDate.now().toEpochDay()
+        store.edit {
+            val pausedOn = it[FADE_PAUSE_DAY] ?: -1L
+            if (paused && pausedOn < 0) it[FADE_PAUSE_DAY] = today
+            if (!paused && pausedOn >= 0) {
+                it[FADE_START_DAY] = (it[FADE_START_DAY] ?: 0L) + (today - pausedOn)
+                it.remove(FADE_PAUSE_DAY)
+            }
+        }
+    }
+
+    /** Raises the delay by one step (the program keeps going from there). */
+    suspend fun stepFadeBack() {
+        val s = settings.first()
+        val day = if (s.fadePauseDay >= 0) s.fadePauseDay else LocalDate.now().toEpochDay()
+        store.edit {
+            it[FADE_START_DAY] = stepBackStartDay(s.fadeStartMs, s.fadeStepMs, s.fadeStartDay, day, s.fadeTargetMs, s.fadeIntervalDays)
+        }
+    }
+
+    suspend fun deletePreset(slot: Int) {
+        store.edit {
+            it.remove(PRESETS[slot])
+            it.remove(PRESET_NAMES[slot])
+        }
+    }
+
+    suspend fun setPresetName(slot: Int, name: String) {
+        store.edit { it[PRESET_NAMES[slot]] = clampPresetName(name) }
     }
 
     suspend fun setDisclaimerAccepted() {
@@ -136,7 +182,7 @@ class SettingsRepository(context: Context) {
     suspend fun applyFadeProgram() {
         val s = settings.first()
         if (s.fadeEnabled) {
-            setDelayMs(programDelayMs(s.fadeStartMs, s.fadeStepMs, s.fadeStartDay, LocalDate.now().toEpochDay()))
+            setDelayMs(s.programDelay(LocalDate.now().toEpochDay()))
         }
     }
 
@@ -151,6 +197,9 @@ class SettingsRepository(context: Context) {
         val FADE_START_MS = intPreferencesKey("fade_start_ms")
         val FADE_STEP_MS = intPreferencesKey("fade_step_ms")
         val FADE_START_DAY = longPreferencesKey("fade_start_day")
+        val FADE_TARGET_MS = intPreferencesKey("fade_target_ms")
+        val FADE_INTERVAL_DAYS = intPreferencesKey("fade_interval_days")
+        val FADE_PAUSE_DAY = longPreferencesKey("fade_pause_day")
         val DISCLAIMER_ACCEPTED = booleanPreferencesKey("disclaimer_accepted")
         val DAILY_GOAL_MIN = intPreferencesKey("daily_goal_min")
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
@@ -160,5 +209,6 @@ class SettingsRepository(context: Context) {
         val MASKING_DB = intPreferencesKey("masking_db")
         val SESSION_LIMIT_MIN =intPreferencesKey("session_limit_min")
         val PRESETS = List(PRESET_SLOTS) { stringPreferencesKey("preset_${it + 1}") }
+        val PRESET_NAMES = List(PRESET_SLOTS) { stringPreferencesKey("preset_name_${it + 1}") }
     }
 }

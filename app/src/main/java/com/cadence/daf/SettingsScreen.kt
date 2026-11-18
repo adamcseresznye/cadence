@@ -202,7 +202,7 @@ private fun MaskingSection(settings: Settings, viewModel: MainViewModel) {
 private fun FadeSection(settings: Settings, viewModel: MainViewModel) {
     SwitchRow(R.string.fade_switch, R.string.fade_caption, settings.fadeEnabled, viewModel::setFadeEnabled)
     if (!settings.fadeEnabled) return
-    val thisWeek = programDelayMs(settings.fadeStartMs, settings.fadeStepMs, settings.fadeStartDay, LocalDate.now().toEpochDay())
+    val now = settings.programDelay(LocalDate.now().toEpochDay())
     val startLabel = stringResource(R.string.fade_start_label, settings.fadeStartMs)
     Text(startLabel)
     CadenceSlider(
@@ -211,6 +211,15 @@ private fun FadeSection(settings: Settings, viewModel: MainViewModel) {
         valueRange = 40f..200f,
         steps = 15,
         modifier = Modifier.semantics { contentDescription = startLabel }
+    )
+    val targetLabel = stringResource(R.string.fade_target_label, settings.fadeTargetMs)
+    Text(targetLabel)
+    CadenceSlider(
+        value = settings.fadeTargetMs.toFloat(),
+        onValueChange = { viewModel.setFadeTargetMs(it.roundToInt()) },
+        valueRange = 40f..200f,
+        steps = 15,
+        modifier = Modifier.semantics { contentDescription = targetLabel }
     )
     val stepLabel = stringResource(R.string.fade_step_label, settings.fadeStepMs)
     Text(stepLabel)
@@ -221,7 +230,21 @@ private fun FadeSection(settings: Settings, viewModel: MainViewModel) {
         steps = 9,
         modifier = Modifier.semantics { contentDescription = stepLabel }
     )
-    Text(stringResource(R.string.fade_this_week, thisWeek))
+    val intervalLabel = stringResource(R.string.fade_interval_label, settings.fadeIntervalDays)
+    Text(intervalLabel)
+    CadenceSlider(
+        value = settings.fadeIntervalDays.toFloat(),
+        onValueChange = { viewModel.setFadeIntervalDays(it.roundToInt()) },
+        valueRange = 1f..14f,
+        steps = 12,
+        modifier = Modifier.semantics { contentDescription = intervalLabel }
+    )
+    Text(stringResource(R.string.fade_now, now))
+    val paused = settings.fadePauseDay >= 0
+    TextButton(onClick = { viewModel.setFadePaused(!paused) }) {
+        Text(stringResource(if (paused) R.string.fade_resume else R.string.fade_pause))
+    }
+    TextButton(onClick = viewModel::stepFadeBack) { Text(stringResource(R.string.fade_back)) }
 }
 
 private fun MicPreset.captionRes(): Int = when (this) {

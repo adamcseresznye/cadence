@@ -226,6 +226,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setFadeStepMs(ms: Int) = fade { repository.setFadeStepMs(ms) }
 
+    fun setFadeTargetMs(ms: Int) = fade { repository.setFadeTargetMs(ms) }
+
+    fun setFadeIntervalDays(days: Int) = fade { repository.setFadeIntervalDays(days) }
+
+    fun setFadePaused(paused: Boolean) = fade { repository.setFadePaused(paused) }
+
+    fun stepFadeBack() = fade { repository.stepFadeBack() }
+
+    fun deletePreset(slot: Int) {
+        viewModelScope.launch { repository.deletePreset(slot) }
+    }
+
+    fun setPresetName(slot: Int, name: String) {
+        viewModelScope.launch { repository.setPresetName(slot, name) }
+    }
+
     private fun fade(change: suspend () -> Unit) {
         viewModelScope.launch {
             change()
