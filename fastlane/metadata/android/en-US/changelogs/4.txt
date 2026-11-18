@@ -1,0 +1,1 @@
+Fading program: choose how much, how often and where the delay stops, pause it, or step back. Presets can be named and only show once saved. README now highlights that Cadence is free, private, with no ads, analytics, accounts or internet access.

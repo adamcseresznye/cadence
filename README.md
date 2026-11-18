@@ -4,7 +4,14 @@
 
 <p align="center"><b>Delayed auditory feedback</b></p>
 
-Cadence is an Android app that plays your own voice back to you with a short delay.
+Cadence is an Android app that plays your own voice back to you with a short delay, for speech practice.
+
+<p align="center"><b>Private by design: free, no ads, no analytics, no accounts, no internet access.<br>Everything stays on your phone and never leaves it.</b></p>
+
+- **No ads, ever.** Free and open source (GPL-3.0).
+- **No analytics, no tracking, no accounts.** Nothing to sign up for.
+- **No internet access.** The app does not request the permission, so it cannot send anything anywhere.
+- **Your voice is never recorded.** It is played back live and discarded. Only the date and length of each session are saved, on your phone.
 
 <p align="center">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_main.png" width="200" alt="Main screen">
@@ -24,7 +31,8 @@ Cadence plays your own voice back to you through wired earbuds, delayed by 40 to
 - **Automatic voice boost:** quiet speech from a weak headset microphone is raised to a clear level. Background noise does not raise the boost.
 - **Pitch shift and volume:** shift your voice from -12 to +12 semitones and set the loudness in your earbuds.
 - **Microphone mode:** Voice recognition (recommended) or Unprocessed.
-- **Fading program:** lowers the delay a little every week, down to 40 ms.
+- **Fading program:** lowers the delay in steps you choose (how much, how often, and where it stops). Pause it or step back at any time.
+- **Named presets:** save your favourite delay, sensitivity, pitch and volume combinations and give them names.
 - **Runs in the background:** the notification has Stop, Mute and a delay button (60, 100, 150 ms), so it works with the screen off.
 - **Stops when it should:** practice stops when you unplug the earbuds, when a call comes in, when another app starts playing, or when you swipe the app away.
 - **Helpful hints:** a timer shows how long you have practised, and a hint appears if the microphone is too quiet to hear you.
