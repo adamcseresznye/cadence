@@ -64,13 +64,8 @@ cmake -S native-tests -B build/native-tests -DCMAKE_BUILD_TYPE=Debug && cmake --
 
 ## Release
 
-- Version name: 0.2.0
 - Bundle: app/build/outputs/bundle/release/app-release.aab
 - Signing keys are not stored in this repository.
-
-## Privacy
-
-The audio never leaves the phone and is never stored. No account, no ads, no analytics, no internet access.
 
 ## License
 
