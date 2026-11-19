@@ -87,6 +87,11 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
             TextButton(onClick = { runCatching { uriHandler.openUri("https://cadence-daf.github.io/") } }) {
                 Text(stringResource(R.string.check_updates))
             }
+            TextButton(onClick = {
+                runCatching { uriHandler.openUri("https://github.com/cadence-daf/cadence/blob/main/PRIVACY.md") }
+            }) {
+                Text(stringResource(R.string.privacy_policy))
+            }
             Text(
                 stringResource(R.string.version, version),
                 style = MaterialTheme.typography.bodySmall,

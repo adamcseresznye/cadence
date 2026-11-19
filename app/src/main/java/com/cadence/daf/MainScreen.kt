@@ -560,6 +560,11 @@ private fun PitchSection(pitchSemitones: Int, onPitchChange: (Int) -> Unit) {
     Caption(R.string.pitch_caption)
 }
 
+// Above 0 dB the voice is amplified: yellow up to +6 dB, red beyond.
+private const val VOLUME_RED_DB = 6
+private val VolumeYellow = Color(0xFFE8B931)
+private val VolumeRed = Color(0xFFEF5350)
+
 @Composable
 private fun VolumeSection(outputGainDb: Int, onVolumeChange: (Int) -> Unit) {
     val label = stringResource(R.string.volume_label, outputGainDb)
@@ -569,7 +574,19 @@ private fun VolumeSection(outputGainDb: Int, onVolumeChange: (Int) -> Unit) {
         onValueChange = { onVolumeChange(it.roundToInt()) },
         valueRange = -30f..12f,
         steps = 41,
-        modifier = Modifier.semantics { contentDescription = label }
+        modifier = Modifier.semantics { contentDescription = label },
+        accent = when {
+            outputGainDb > VOLUME_RED_DB -> VolumeRed
+            outputGainDb > 0 -> VolumeYellow
+            else -> null
+        }
     )
     Caption(R.string.volume_caption)
+    if (outputGainDb > 0) {
+        Text(
+            stringResource(R.string.volume_warning),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (outputGainDb > VOLUME_RED_DB) VolumeRed else VolumeYellow
+        )
+    }
 }

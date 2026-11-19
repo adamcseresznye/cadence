@@ -185,13 +185,14 @@ fun CadenceSlider(
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    accent: Color? = null
 ) {
     val colors = MaterialTheme.colorScheme
     val source = remember { MutableInteractionSource() }
     val dragged by source.collectIsDraggedAsState()
     val grow by animateFloatAsState(if (dragged) 1.2f else 1f, motionSpring(1f, 500f), label = "thumb")
-    val active = if (enabled) colors.primary else colors.outline
+    val active = if (enabled) accent ?: colors.primary else colors.outline
     val inactive = colors.outlineVariant
     val ring = colors.surfaceContainer
     Slider(
