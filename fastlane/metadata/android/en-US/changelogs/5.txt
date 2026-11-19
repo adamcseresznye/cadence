@@ -1,0 +1,1 @@
+Louder voice: the Volume slider now goes up to +12 dB, turns yellow and then red at high levels, and warns that high volume can damage hearing. Settings > About has a Privacy policy link and a Check for updates link.
