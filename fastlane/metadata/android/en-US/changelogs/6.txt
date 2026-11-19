@@ -1,0 +1,1 @@
+Settings > About now lists Check for updates, Privacy policy, License, Report an issue and Source on GitHub as tidy link rows.
