@@ -29,7 +29,8 @@ class SettingsClampTest {
     @Test
     fun clampOutputGainKeepsValueInRange() {
         assertEquals(-30, clampOutputGainDb(-40))
-        assertEquals(0, clampOutputGainDb(5))
+        assertEquals(12, clampOutputGainDb(20))
+        assertEquals(5, clampOutputGainDb(5))
         assertEquals(-6, clampOutputGainDb(-6))
     }
 

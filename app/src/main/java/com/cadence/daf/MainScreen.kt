@@ -567,8 +567,8 @@ private fun VolumeSection(outputGainDb: Int, onVolumeChange: (Int) -> Unit) {
     CadenceSlider(
         value = outputGainDb.toFloat(),
         onValueChange = { onVolumeChange(it.roundToInt()) },
-        valueRange = -30f..0f,
-        steps = 29,
+        valueRange = -30f..12f,
+        steps = 41,
         modifier = Modifier.semantics { contentDescription = label }
     )
     Caption(R.string.volume_caption)

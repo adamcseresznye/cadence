@@ -22,7 +22,7 @@ class PresetsTest {
 
     @Test
     fun parsePresetClampsOutOfRangeNumbers() {
-        assertEquals(Preset(200, 10, -12, 0), parsePreset("900,99,-40,6"))
+        assertEquals(Preset(200, 10, -12, 12), parsePreset("900,99,-40,20"))
     }
 
     @Test

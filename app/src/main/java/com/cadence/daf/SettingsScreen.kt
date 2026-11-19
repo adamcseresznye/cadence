@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -43,6 +44,7 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
     val state by viewModel.uiState.collectAsState()
     val settings = state.settings
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val version = remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }
     var versionTaps by remember { mutableIntStateOf(0) }
     ScreenScaffold {
@@ -82,6 +84,9 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
         SectionCard {
             Text(stringResource(R.string.about_text))
             Text(stringResource(R.string.about_disclaimer), style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = { runCatching { uriHandler.openUri("https://cadence-daf.github.io/") } }) {
+                Text(stringResource(R.string.website))
+            }
             Text(
                 stringResource(R.string.version, version),
                 style = MaterialTheme.typography.bodySmall,

@@ -48,7 +48,7 @@ fun clampSensitivity(level: Int): Int = level.coerceIn(0, 10)
 
 fun clampPitchSemitones(semitones: Int): Int = semitones.coerceIn(-12, 12)
 
-fun clampOutputGainDb(db: Int): Int = db.coerceIn(-30, 0)
+fun clampOutputGainDb(db: Int): Int = db.coerceIn(-30, 12)
 
 fun clampFadeStartMs(ms: Int): Int = ms.coerceIn(40, 200)
 

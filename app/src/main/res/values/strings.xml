@@ -49,6 +49,7 @@
     <string name="gate_switch">Only play when I speak</string>
     <string name="gate_caption">Silences your earbuds when no speech is heard, so traffic and other noise are not played back.</string>
     <string name="about">About</string>
+    <string name="website">Website</string>
     <string name="about_text">All audio is processed on your phone and is never stored or sent anywhere.</string>
     <string name="notification_channel">Cadence running</string>
     <string name="notification_title">Cadence is running</string>
