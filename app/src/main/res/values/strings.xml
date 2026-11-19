@@ -105,6 +105,9 @@
     <string name="volume_caption">Loudness in your earbuds. Above 0 dB your voice is amplified.</string>
     <string name="volume_warning">High volume can damage hearing.</string>
     <string name="privacy_policy">Privacy policy</string>
+    <string name="license">License (GPL-3.0)</string>
+    <string name="report_issue">Report an issue</string>
+    <string name="source_code">Source on GitHub</string>
     <string name="fade_caption">Lowers the delay in steps, down to the delay you pick. Locks the delay slider. Pause keeps the current delay.</string>
     <string name="reminder_switch">Daily reminder</string>
     <string name="reminder_caption">One notification a day. Skipped when you have already practised.</string>

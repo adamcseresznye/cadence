@@ -12,6 +12,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +46,6 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
     val state by viewModel.uiState.collectAsState()
     val settings = state.settings
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     val version = remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }
     var versionTaps by remember { mutableIntStateOf(0) }
     ScreenScaffold {
@@ -84,14 +85,13 @@ fun SettingsScreen(viewModel: MainViewModel, onBack: () -> Unit, openDebug: () -
         SectionCard {
             Text(stringResource(R.string.about_text))
             Text(stringResource(R.string.about_disclaimer), style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = { runCatching { uriHandler.openUri("https://cadence-daf.github.io/") } }) {
-                Text(stringResource(R.string.check_updates))
-            }
-            TextButton(onClick = {
-                runCatching { uriHandler.openUri("https://github.com/cadence-daf/cadence/blob/main/PRIVACY.md") }
-            }) {
-                Text(stringResource(R.string.privacy_policy))
-            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            LinkRow(R.string.check_updates, "https://cadence-daf.github.io/")
+            LinkRow(R.string.privacy_policy, "https://github.com/cadence-daf/cadence/blob/main/PRIVACY.md")
+            LinkRow(R.string.license, "https://github.com/cadence-daf/cadence/blob/main/LICENSE")
+            LinkRow(R.string.report_issue, "https://github.com/cadence-daf/cadence/issues")
+            LinkRow(R.string.source_code, "https://github.com/cadence-daf/cadence")
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Text(
                 stringResource(R.string.version, version),
                 style = MaterialTheme.typography.bodySmall,
@@ -135,6 +135,27 @@ private fun SwitchRow(@StringRes title: Int, @StringRes caption: Int, checked: B
             Caption(caption)
         }
         Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+/** A tappable row that opens a web page in the browser; the app itself stays offline. */
+@Composable
+private fun LinkRow(@StringRes label: Int, url: String) {
+    val uriHandler = LocalUriHandler.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 52.dp)
+            .clickable(role = Role.Button) { runCatching { uriHandler.openUri(url) } },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(stringResource(label), color = MaterialTheme.colorScheme.primary)
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
